@@ -1,0 +1,364 @@
+---
+title: "The JavaScript Event Loop"
+description: "Understand how JavaScript handles async operations under the hood"
+order: 1
+category: "JavaScript"
+---
+
+JavaScript is **single-threaded**. It has a single call stack, which means it can only do **one thing at a time**.
+
+Yet somehow, it handles network requests, timers, user interactions -- all without freezing. How?
+
+---
+
+The answer lies in a set of components working together: the **call stack**, **Web APIs** (or Node APIs), the **task queue**, the **microtask queue**, and the **event loop**.
+
+Let's break it all down.
+
+---
+
+## The Call Stack
+
+The call stack manages the execution of your program. Every time a function is called, an **execution context** is created and pushed onto the stack. When the function returns, it's popped off.
+
+---
+
+```js
+function logThree() {
+  console.log(3);
+}
+
+function logThreeAndFour() {
+  logThree();
+  console.log(4);
+}
+
+console.log(1);
+console.log(2);
+logThreeAndFour();
+```
+
+---
+
+Here's what happens step by step:
+
+1. `console.log(1)` is pushed onto the stack, logs `1`, and is popped off
+2. `console.log(2)` is pushed, logs `2`, popped off
+3. `logThreeAndFour()` is pushed onto the stack
+4. Inside it, `logThree()` is pushed, which pushes `console.log(3)` -- logs `3`
+5. `logThree()` is done, popped off. Then `console.log(4)` logs `4`
+6. `logThreeAndFour()` finishes and is popped off
+
+The stack fills up and empties like a stack of plates: **last in, first out**.
+
+---
+
+## The Problem: Blocking
+
+Since JavaScript has only one call stack, a long-running task blocks **everything**.
+
+```js
+// Imagine this takes 3 seconds...
+heavyComputation();
+
+console.log("Done!"); // Won't run until the computation finishes
+```
+
+---
+
+During those 3 seconds, your entire program is frozen. The UI doesn't respond, no clicks are registered, nothing renders.
+
+In a real application, we constantly need to do things that take time: network requests, reading files, waiting for user input, timers. We can't just block the stack every time.
+
+This is where **Web APIs** come in.
+
+---
+
+## Web APIs: Offloading Work
+
+Web APIs (in the browser) or Node APIs (in Node.js) allow you to **hand off** long-running tasks to the environment. The browser or Node handles the work in the background, and your call stack stays free.
+
+Common examples:
+- `setTimeout` / `setInterval` -- timers
+- `fetch` -- network requests
+- `navigator.geolocation` -- device sensors
+- DOM event listeners -- user interaction
+
+---
+
+When you call one of these, the function is briefly added to the call stack -- just long enough to **register** the async operation. Then it's immediately popped off, and the browser takes over.
+
+```js
+console.log("Start");
+
+setTimeout(() => {
+  console.log("Timer done");
+}, 2000);
+
+console.log("End");
+```
+
+---
+
+Output:
+```
+Start
+End
+Timer done
+```
+
+`setTimeout` doesn't pause execution for 2 seconds. It tells the browser: *"Hey, run this callback in 2 seconds"*. JavaScript moves on immediately and logs `"End"`.
+
+---
+
+## The Task Queue
+
+So the browser handles the timer in the background. But when the 2 seconds are up, the callback can't just jump onto the call stack -- that could interrupt code that's already running.
+
+Instead, the callback is placed in the **task queue** (also called the callback queue).
+
+---
+
+The task queue holds callbacks from:
+- `setTimeout` / `setInterval`
+- DOM event handlers (clicks, keyboard events...)
+- Other callback-based APIs
+
+```
+ Call Stack          Task Queue
+┌──────────┐       ┌─────────────────────┐
+│          │       │ () => log("Timer")  │
+│  (empty) │  ◄──  │                     │
+└──────────┘       └─────────────────────┘
+```
+
+But who moves them from the queue to the stack?
+
+---
+
+## The Event Loop
+
+The event loop is the **traffic controller**. It has one simple job:
+
+> *"Is the call stack empty? If yes, take the first task from the queue and move it to the call stack."*
+
+That's it. It continuously checks, over and over.
+
+---
+
+Let's trace through a full example:
+
+```js
+console.log("Start");
+
+setTimeout(() => {
+  console.log("Timeout 1");
+}, 100);
+
+setTimeout(() => {
+  console.log("Timeout 2");
+}, 2000);
+
+console.log("End");
+```
+
+---
+
+1. `console.log("Start")` -- pushed to stack, logs `Start`, popped
+2. First `setTimeout` -- registers the callback + 100ms timer with the browser, popped
+3. Second `setTimeout` -- registers the callback + 2000ms timer, popped
+4. `console.log("End")` -- logs `End`, popped
+5. After 100ms, the first callback moves to the **task queue**
+6. Call stack is empty → event loop moves it to the stack → logs `Timeout 1`
+7. After 2000ms, the second callback arrives in the task queue
+8. Call stack is empty → event loop moves it → logs `Timeout 2`
+
+---
+
+**Important**: the delay in `setTimeout` is the minimum time before the callback enters the task queue -- **not** the time until it runs. If the call stack is busy, the callback has to wait.
+
+---
+
+## The Microtask Queue
+
+Callback-based APIs use the task queue. But what about **Promises**?
+
+Promises use a separate, higher-priority queue: the **microtask queue**.
+
+---
+
+The microtask queue is reserved for:
+- `.then()`, `.catch()`, `.finally()` handlers
+- `async/await` (the code after `await`)
+- `queueMicrotask()` callbacks
+
+Here's the critical rule: **the event loop always drains the entire microtask queue before touching the task queue**.
+
+---
+
+```
+                  ┌─────────────────────┐
+                  │   Microtask Queue    │ ← Promises, queueMicrotask
+                  │   (HIGH PRIORITY)    │
+                  └──────────┬──────────┘
+                             │ ← drained first
+  ┌──────────┐    ┌──────────▼──────────┐
+  │Call Stack │◄───│     Event Loop      │
+  └──────────┘    └──────────┬──────────┘
+                             │ ← checked after
+                  ┌──────────▼──────────┐
+                  │    Task Queue        │ ← setTimeout, events
+                  │   (LOWER PRIORITY)   │
+                  └─────────────────────┘
+```
+
+---
+
+Let's see this in action with `fetch`:
+
+```js
+console.log("Start");
+
+fetch("https://api.example.com/data")
+  .then(res => res.json())
+  .then(data => console.log(data));
+
+console.log("End");
+```
+
+---
+
+1. `console.log("Start")` logs `Start`
+2. `fetch()` is pushed to the stack -- it creates a **Promise** (pending) and starts a network request in the background, then is popped off
+3. `.then()` registers a handler for when the promise resolves
+4. `console.log("End")` logs `End`
+5. Later, the server responds -- the promise resolves and the `.then()` handler is pushed to the **microtask queue**
+6. Event loop checks: call stack is empty? Microtask queue has a task? Move it to the stack → the data is logged
+
+---
+
+## Microtask Priority in Action
+
+This is where it gets interesting. After **each task** from the task queue, the event loop checks the microtask queue again. And microtasks can schedule **more microtasks** -- the event loop will handle all of them before moving on.
+
+---
+
+```js
+setTimeout(() => console.log("timeout"), 0);
+Promise.resolve().then(() => console.log("promise"));
+console.log("sync");
+```
+
+Output:
+```
+sync
+promise
+timeout
+```
+
+Even though `setTimeout` has a delay of `0`, the promise handler runs first because microtasks have priority.
+
+---
+
+Here's a trickier example:
+
+```js
+setTimeout(() => console.log("A"), 0);
+
+queueMicrotask(() => {
+  console.log("B");
+  queueMicrotask(() => console.log("C"));
+});
+
+console.log("D");
+```
+
+---
+
+Output:
+```
+D
+B
+C
+A
+```
+
+Why? After `D` is logged (synchronous), the event loop finds `B` in the microtask queue. While processing `B`, a new microtask `C` is queued. The event loop **must** drain all microtasks before moving to the task queue -- so `C` runs before `A`.
+
+---
+
+**Warning**: if a microtask keeps scheduling new microtasks endlessly, the task queue will never get a turn. This creates an infinite loop that freezes your program.
+
+---
+
+## Test Yourself
+
+Try to predict the output of this code before reading the answer:
+
+```js
+Promise.resolve().then(() => console.log("1"));
+
+setTimeout(() => console.log("2"), 10);
+
+queueMicrotask(() => {
+  console.log("3");
+  queueMicrotask(() => console.log("4"));
+});
+
+console.log("5");
+```
+
+Think about it... what logs first? What logs last?
+
+---
+
+The answer is: **`5`, `1`, `3`, `4`, `2`**.
+
+Here's why:
+
+1. `Promise.resolve().then(...)` -- promise is instantly resolved, handler goes to the **microtask queue**
+2. `setTimeout(...)` -- registers callback + 10ms timer with the browser
+3. `queueMicrotask(...)` -- callback goes to the **microtask queue**
+4. `console.log("5")` -- synchronous, runs now → logs **`5`**
+
+---
+
+5. Script is done, call stack is empty. Event loop drains the microtask queue:
+   - Promise handler → logs **`1`**
+   - `queueMicrotask` callback → logs **`3`**, and schedules another microtask
+   - That new microtask → logs **`4`**
+6. Microtask queue is empty. Timer has expired → callback moves from task queue to stack → logs **`2`**
+
+---
+
+## Recap
+
+Here's the complete mental model:
+
+- **JavaScript is single-threaded** -- one call stack, one task at a time
+- **Web APIs / Node APIs** let you offload async work (timers, network, I/O) to the environment, keeping the call stack free
+- When an async operation completes, its callback goes to a **queue** -- not directly to the call stack
+
+---
+
+- The **task queue** holds callbacks from `setTimeout`, event listeners, and other callback-based APIs
+- The **microtask queue** holds `.then()`/`.catch()`/`.finally()` handlers, `async/await` continuations, and `queueMicrotask()` callbacks
+- The **event loop** checks: *"Is the call stack empty? Drain all microtasks first. Then take one task from the task queue."* Repeat forever
+
+---
+
+```
+  ┌───────────────────┐
+  │    Call Stack      │ ← runs one thing at a time
+  └────────┬──────────┘
+           │
+  ┌────────▼──────────┐
+  │    Event Loop      │ ← "is the stack empty?"
+  └──┬─────────────┬──┘
+     │             │
+     ▼             ▼
+  Microtasks    Task Queue
+  (priority)    (after microtasks)
+```
+
+Next time you see `async` code behaving in unexpected ways, trace through the queues. Once this model clicks, async JavaScript stops being magic.

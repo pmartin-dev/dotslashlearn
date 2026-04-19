@@ -35,9 +35,9 @@ export function Sidebar({
       >
         {/* Header */}
         <div className="shrink-0 px-5 pt-6 pb-8">
-          <h1 className="font-mono text-sm font-bold text-emerald-signal tracking-wider">
+          <Link to="/" onClick={onClose} className="cursor-pointer font-mono text-sm font-bold text-emerald-signal tracking-wider hover:text-volt-mint transition-colors">
             ./learn
-          </h1>
+          </Link>
           <p className="font-mono text-[10px] text-slate-steel mt-0.5">
             beta
           </p>

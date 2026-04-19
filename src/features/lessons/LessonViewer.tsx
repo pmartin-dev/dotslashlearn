@@ -1,12 +1,33 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import type { Lesson } from "./schema";
 import { toSlug } from "./schema";
 import { progressStore } from "@/features/progress/store";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
+import { CodeBlock } from "./CodeBlock";
+
+const markdownComponents = {
+  pre({ children }: { children?: React.ReactNode }) {
+    const child = Array.isArray(children) ? children[0] : children;
+    if (
+      child &&
+      typeof child === "object" &&
+      "type" in child &&
+      child.type === "code"
+    ) {
+      const { className, children: codeChildren } = child.props;
+      return (
+        <CodeBlock className={className}>
+          {codeChildren}
+        </CodeBlock>
+      );
+    }
+    return <pre>{children}</pre>;
+  },
+};
 
 type LessonViewerProps = Pick<Lesson, "slug" | "title" | "steps" | "category">;
 
@@ -14,9 +35,8 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const total = steps.length;
+  const stepRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
-  // Restore progress from localStorage synchronously at mount.
-  // This avoids a flash of step 0 before restoring the saved position.
   const [currentStep, setCurrentStep] = useState(() => {
     const saved = progressStore.get(slug);
     if (saved.currentStep > 0 && saved.currentStep < total && !saved.completed) {
@@ -24,37 +44,47 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
     }
     return 0;
   });
-  const [direction, setDirection] = useState(1);
+  const [highestStep, setHighestStep] = useState(currentStep);
   const isComplete = currentStep === total - 1;
 
   useEffect(() => {
     progressStore.saveStep(slug, currentStep);
   }, [slug, currentStep]);
 
+  useEffect(() => {
+    const el = stepRefs.current.get(currentStep);
+    el?.scrollIntoView({
+      behavior: prefersReducedMotion ? "instant" : "smooth",
+      block: "center",
+    });
+  }, [currentStep, prefersReducedMotion]);
+
   const goNext = useCallback(() => {
     if (isComplete) {
       progressStore.complete(slug);
       navigate({ to: "/" });
     } else {
-      setDirection(1);
-      setCurrentStep((s) => s + 1);
+      setCurrentStep((s) => {
+        const next = s + 1;
+        setHighestStep((h) => Math.max(h, next));
+        return next;
+      });
     }
   }, [isComplete, navigate, slug]);
 
   const goPrev = useCallback(() => {
     if (currentStep > 0) {
-      setDirection(-1);
       setCurrentStep((s) => s - 1);
     }
   }, [currentStep]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Enter" || e.key === "ArrowDown") {
+      if (e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowRight") {
         e.preventDefault();
         goNext();
       }
-      if (e.key === "ArrowUp") {
+      if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
         e.preventDefault();
         goPrev();
       }
@@ -67,19 +97,10 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [goNext, goPrev, navigate]);
 
-  const animationProps = prefersReducedMotion
-    ? { initial: false, animate: {}, exit: {}, transition: { duration: 0 } }
-    : {
-        initial: { y: direction * 60, opacity: 0 },
-        animate: { y: 0, opacity: 1 },
-        exit: { y: direction * -60, opacity: 0 },
-        transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] as const },
-      };
-
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex h-full flex-col">
       {/* Top bar: lesson info */}
-      <div className="shrink-0 border-b border-charcoal/50 px-4 sm:px-6 py-3">
+      <div className="sticky top-0 z-10 shrink-0 border-b border-charcoal/50 bg-carbon px-4 sm:px-6 py-3">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 font-mono text-xs sm:text-sm min-w-0">
             <Link
@@ -103,76 +124,93 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
             [{currentStep + 1}/{total}]
           </span>
         </div>
+
+        {/* Progress bar */}
+        <div className="mt-2 h-px w-full bg-charcoal/30">
+          <motion.div
+            className="h-full bg-emerald-signal"
+            initial={false}
+            animate={{ width: `${((currentStep + 1) / total) * 100}%` }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: "easeOut" }}
+          />
+        </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="h-px w-full bg-charcoal/30">
-        <motion.div
-          className="h-full bg-emerald-signal"
-          initial={false}
-          animate={{ width: `${((currentStep + 1) / total) * 100}%` }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: "easeOut" }}
-        />
-      </div>
-
-      {/* Step content */}
+      {/* Steps content — all visited steps stacked */}
       <div
-        className="relative flex-1 overflow-y-auto sm:cursor-default cursor-pointer"
+        className="flex-1 overflow-y-auto sm:cursor-default cursor-pointer"
         onClick={(e) => {
           if (window.innerWidth < 640 && !isComplete && !(e.target as HTMLElement).closest("a")) {
             goNext();
           }
         }}
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            {...animationProps}
-            className="flex min-h-full items-center"
-          >
-            <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-0 prose-terminal">
+        <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
+          <div className="h-[40vh]" />
+          {steps.slice(0, highestStep + 1).map((step, i) => (
+            <motion.div
+              key={i}
+              ref={(el) => {
+                if (el) stepRefs.current.set(i, el);
+                else stepRefs.current.delete(i);
+              }}
+              initial={prefersReducedMotion || i <= highestStep - 1 ? false : { opacity: 0, y: 30 }}
+              animate={{
+                opacity: i <= currentStep ? 1 : 0.15,
+                y: 0,
+              }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: [0.4, 0, 0.2, 1] }}
+              className="py-16 prose-terminal"
+            >
               <ErrorBoundary>
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {steps[currentStep]}
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={markdownComponents}
+                >
+                  {step}
                 </ReactMarkdown>
               </ErrorBoundary>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+              {i < currentStep && (
+                <div className="mt-16 border-b border-charcoal/20" />
+              )}
+            </motion.div>
+          ))}
+          <div className="h-[40vh]" />
+        </div>
 
-      {/* Terminal prompt */}
-      <div className="shrink-0 border-t border-charcoal/50 bg-carbon">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 py-3">
-          {isComplete ? (
-            <div className="flex items-center justify-between font-mono text-xs sm:text-sm">
-              <span>
-                <span className="text-emerald-signal">~</span>
-                <span className="text-slate-steel"> $ </span>
-                <span className="text-emerald-signal">echo</span>
-                <span className="text-parchment">
-                  {" "}
-                  &quot;lesson complete&quot;
+        {/* Terminal prompt */}
+        <div className="border-t border-charcoal/50 bg-carbon">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 py-3">
+            {isComplete ? (
+              <div className="flex items-center justify-between font-mono text-xs sm:text-sm">
+                <span>
+                  <span className="text-emerald-signal">~</span>
+                  <span className="text-slate-steel"> $ </span>
+                  <span className="text-emerald-signal">echo</span>
+                  <span className="text-parchment">
+                    {" "}
+                    &quot;lesson complete&quot;
+                  </span>
                 </span>
-              </span>
-              <Link
-                to="/"
-                className="text-slate-steel hover:text-emerald-signal transition-colors"
+                <Link
+                  to="/"
+                  className="text-slate-steel hover:text-emerald-signal transition-colors"
+                >
+                  cd ~
+                </Link>
+              </div>
+            ) : (
+              <button
+                onClick={goNext}
+                className="group flex w-full items-center font-mono text-xs sm:text-sm"
               >
-                cd ~
-              </Link>
-            </div>
-          ) : (
-            <button
-              onClick={goNext}
-              className="group flex w-full items-center font-mono text-xs sm:text-sm"
-            >
-              <span className="ml-auto text-xs text-charcoal group-hover:text-slate-steel transition-colors">
-                <span className="hidden sm:inline">press enter to continue</span>
-                <span className="sm:hidden">tap to continue</span>
-              </span>
-            </button>
-          )}
+                <span className="ml-auto text-xs text-charcoal group-hover:text-slate-steel transition-colors">
+                  <span className="hidden sm:inline">press enter to continue</span>
+                  <span className="sm:hidden">tap to continue</span>
+                </span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
