@@ -1,0 +1,98 @@
+---
+title: "The Node.js Event Loop"
+description: "Understand how Node handles async operations under the hood"
+order: 1
+category: "Node.js"
+---
+
+Node.js is **single-threaded**. Yet it handles thousands of concurrent connections without breaking a sweat.
+
+How is that possible?
+
+---
+
+The secret is the **Event Loop** -- a mechanism that continuously checks for pending work and executes callbacks when they're ready.
+
+```
+  ┌─────────────────────┐
+  │     Call Stack       │
+  └──────────┬──────────┘
+             │
+  ┌──────────▼──────────┐
+  │     Event Loop       │◄── timers, I/O, idle...
+  └──────────┬──────────┘
+             │
+  ┌──────────▼──────────┐
+  │   Callback Queue     │
+  └─────────────────────┘
+```
+
+Think of it as a waiter in a restaurant: one person, but they keep checking every table.
+
+---
+
+When you write something like:
+
+```js
+setTimeout(() => {
+  console.log("hello");
+}, 1000);
+```
+
+The callback is **not** placed on the call stack immediately. Instead, Node hands it off to the system (via libuv), and the Event Loop picks it up once the timer expires.
+
+---
+
+The Event Loop has **phases**, each responsible for a different type of callback:
+
+```
+   ┌───────────────────────────┐
+┌─▶│         timers             │ ← setTimeout, setInterval
+│  └─────────────┬─────────────┘
+│  ┌─────────────▼─────────────┐
+│  │     pending callbacks      │ ← system-level callbacks
+│  └─────────────┬─────────────┘
+│  ┌─────────────▼─────────────┐
+│  │       idle, prepare        │ ← internal use
+│  └─────────────┬─────────────┘
+│  ┌─────────────▼─────────────┐
+│  │          poll              │ ← I/O callbacks (fs, net...)
+│  └─────────────┬─────────────┘
+│  ┌─────────────▼─────────────┐
+│  │          check             │ ← setImmediate
+│  └─────────────┬─────────────┘
+│  ┌─────────────▼─────────────┐
+│  │      close callbacks       │ ← socket.on('close')
+│  └─────────────┘─────────────┘
+│              │
+└──────────────┘
+```
+
+Each iteration of the loop is called a **tick**.
+
+---
+
+A common gotcha: `process.nextTick()` and `Promise` callbacks run **between** phases, not inside any phase.
+
+```js
+setTimeout(() => console.log("timeout"), 0);
+Promise.resolve().then(() => console.log("promise"));
+process.nextTick(() => console.log("nextTick"));
+```
+
+Output:
+```
+nextTick
+promise
+timeout
+```
+
+`nextTick` always fires first, then microtasks (Promises), then the timer phase.
+
+---
+
+That's the core mental model.
+
+The Event Loop is what makes Node feel concurrent even though it runs on a single thread. It delegates heavy work (I/O, timers) to the system, and picks up the results when they're ready.
+
+Next time you see async code in Node, picture that loop spinning -- checking timers, polling for I/O, draining callback queues -- one tick at a time.

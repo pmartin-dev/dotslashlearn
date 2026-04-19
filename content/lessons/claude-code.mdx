@@ -1,0 +1,75 @@
+---
+title: "Claude Code"
+description: "Master the AI-powered CLI that writes code with you"
+order: 2
+draft: false
+category: "AI Tools"
+---
+
+Claude Code is a **CLI tool** made by Anthropic. It brings Claude directly into your terminal, where it can read your codebase, edit files, and run commands.
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+You don't need an IDE plugin. You don't need a web browser. Just your terminal.
+
+---
+
+To start, run `claude` in any project directory. Claude Code will read the codebase and understand the context.
+
+```bash
+cd my-project
+claude
+```
+
+From there, you can ask it anything: fix a bug, add a feature, explain a function, run tests.
+
+---
+
+Claude Code doesn't just suggest code -- it **writes files directly**. When you approve a change, it edits the file on disk.
+
+```
+> Add input validation to the signup form
+
+Claude Code will:
+  1. Read the relevant files
+  2. Propose changes
+  3. Apply them on approval
+```
+
+This means you stay in your terminal, reviewing diffs instead of copy-pasting from a chat window.
+
+---
+
+One of the most powerful features is **tool use**. Claude Code can run shell commands, search your codebase with grep, read files, and even run your test suite.
+
+```
+> Run the tests and fix any failures
+
+$ npm test
+  FAIL src/utils.test.ts
+  ✕ validates email format
+
+Claude reads the error, finds the bug, fixes it, reruns tests.
+```
+
+---
+
+You can configure Claude Code with a `CLAUDE.md` file at the root of your project. This file contains instructions that Claude will follow in every conversation.
+
+```markdown
+# CLAUDE.md
+
+- Use TypeScript strict mode
+- Tests go in __tests__ folders
+- Never mock the database in integration tests
+```
+
+Think of it as a `.editorconfig` for your AI pair programmer.
+
+---
+
+That's the basics. Claude Code turns your terminal into a collaborative coding environment where you describe what you want, and Claude handles the implementation.
+
+The key mental shift: you're not writing prompts, you're having a conversation with a tool that understands your codebase.
