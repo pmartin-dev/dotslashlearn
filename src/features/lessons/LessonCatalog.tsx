@@ -4,6 +4,7 @@ import type { LessonMeta } from "./schema";
 import type { ProgressData } from "@/features/progress/store";
 import { progressStore } from "@/features/progress/store";
 import { LessonCard } from "./LessonCard";
+import { useZoneKeyboard } from "@/shared/hooks/useKeyZone";
 
 export function LessonCatalog({ lessons }: { lessons: LessonMeta[] }) {
   const navigate = useNavigate();
@@ -26,10 +27,18 @@ export function LessonCatalog({ lessons }: { lessons: LessonMeta[] }) {
     [filtered],
   );
 
+  // All category options: [null, ...categories]
+  const categoryOptions = useMemo<Array<string | null>>(
+    () => [null, ...categories],
+    [categories],
+  );
+
   // Reset selection when filter changes
-  useEffect(() => {
+  const [prevCategory, setPrevCategory] = useState(activeCategory);
+  if (activeCategory !== prevCategory) {
+    setPrevCategory(activeCategory);
     setSelected(0);
-  }, [activeCategory]);
+  }
 
   useEffect(() => {
     const refresh = () => setProgress(progressStore.getAll());
@@ -49,50 +58,43 @@ export function LessonCatalog({ lessons }: { lessons: LessonMeta[] }) {
     }
   }, [navigate, navigable, selected]);
 
-  // All category options: [null, ...categories]
-  const categoryOptions = useMemo<Array<string | null>>(
-    () => [null, ...categories],
-    [categories],
-  );
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      // Tab / Shift+Tab to cycle categories
-      if (e.key === "Tab") {
+  const handlers = useMemo(
+    () => ({
+      ArrowLeft: (e: KeyboardEvent) => {
         e.preventDefault();
         setActiveCategory((current) => {
           const idx = categoryOptions.indexOf(current);
-          if (e.shiftKey) {
-            return categoryOptions[(idx - 1 + categoryOptions.length) % categoryOptions.length];
-          }
+          return categoryOptions[(idx - 1 + categoryOptions.length) % categoryOptions.length];
+        });
+      },
+      ArrowRight: (e: KeyboardEvent) => {
+        e.preventDefault();
+        setActiveCategory((current) => {
+          const idx = categoryOptions.indexOf(current);
           return categoryOptions[(idx + 1) % categoryOptions.length];
         });
-        return;
-      }
-      if (e.key === "ArrowRight" || e.key === "l") {
+      },
+      ArrowDown: (e: KeyboardEvent) => {
         e.preventDefault();
         setSelected((s) => Math.min(s + 1, navigable.length - 1));
-      }
-      if (e.key === "ArrowLeft" || e.key === "h") {
+      },
+      ArrowUp: (e: KeyboardEvent) => {
         e.preventDefault();
         setSelected((s) => Math.max(s - 1, 0));
-      }
-      if (e.key === "ArrowDown" || e.key === "j") {
-        e.preventDefault();
-        setSelected((s) => Math.min(s + 1, navigable.length - 1));
-      }
-      if (e.key === "ArrowUp" || e.key === "k") {
-        e.preventDefault();
-        setSelected((s) => Math.max(s - 1, 0));
-      }
-      if (e.key === "Enter") {
+      },
+      Enter: (e: KeyboardEvent) => {
         e.preventDefault();
         open();
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigable, open, categoryOptions]);
+      },
+      Escape: (e: KeyboardEvent) => {
+        e.preventDefault();
+        navigate({ to: "/" });
+      },
+    }),
+    [categoryOptions, navigable.length, open, navigate],
+  );
+
+  useZoneKeyboard("content", handlers);
 
   // Build a set of navigable slugs to track selected index
   let navIndex = 0;
@@ -129,7 +131,7 @@ export function LessonCatalog({ lessons }: { lessons: LessonMeta[] }) {
       </div>
 
       {/* Lesson grid */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="flex flex-col gap-3 max-w-2xl">
       {filtered.map((lesson) => {
         const isNavigable = !lesson.draft;
         const currentNavIndex = isNavigable ? navIndex++ : -1;
