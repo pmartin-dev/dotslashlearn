@@ -2,14 +2,15 @@
 title: "Claude Code"
 description: "Master the AI-powered CLI that writes code with you"
 order: 2
-draft: false
+draft: true
 category: "AI Tools"
 ---
 
 Claude Code is a **CLI tool** made by Anthropic. It brings Claude directly into your terminal, where it can read your codebase, edit files, and run commands.
 
-```bash
-npm install -g @anthropic-ai/claude-code
+```terminal
+$ npm install -g @anthropic-ai/claude-code
+added 128 packages in 4s
 ```
 
 You don't need an IDE plugin. You don't need a web browser. Just your terminal.
@@ -18,9 +19,13 @@ You don't need an IDE plugin. You don't need a web browser. Just your terminal.
 
 To start, run `claude` in any project directory. Claude Code will read the codebase and understand the context.
 
-```bash
-cd my-project
-claude
+```terminal
+$ cd my-project
+$ claude
+╭──────────────────────────────────────╮
+│ Claude Code v1.0                     │
+│ Type your request or ask a question  │
+╰──────────────────────────────────────╯
 ```
 
 From there, you can ask it anything: fix a bug, add a feature, explain a function, run tests.
@@ -44,15 +49,16 @@ This means you stay in your terminal, reviewing diffs instead of copy-pasting fr
 
 One of the most powerful features is **tool use**. Claude Code can run shell commands, search your codebase with grep, read files, and even run your test suite.
 
-```
-> Run the tests and fix any failures
-
+```terminal
 $ npm test
-  FAIL src/utils.test.ts
+FAIL src/utils.test.ts
   ✕ validates email format
 
-Claude reads the error, finds the bug, fixes it, reruns tests.
+Expected: "user@example.com" to be valid
+Received: false
 ```
+
+Claude reads the error, finds the bug, fixes it, and reruns the tests — all autonomously.
 
 ---
 
