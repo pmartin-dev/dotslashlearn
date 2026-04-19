@@ -1,0 +1,188 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu,
+    Cantarell, "Noto Sans", Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --font-heading: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu,
+    Cantarell, "Noto Sans", Helvetica, Arial, sans-serif;
+
+  /* VoltAgent colors */
+  --color-abyss: #050507;
+  --color-carbon: #101010;
+  --color-charcoal: #3d3a39;
+  --color-emerald-signal: #00d992;
+  --color-volt-mint: #2fd6a1;
+  --color-snow: #f2f2f2;
+  --color-parchment: #b8b3b0;
+  --color-slate-steel: #8b949e;
+
+  /* Terminal traffic-light buttons */
+  --color-traffic-red: #ff5f57;
+  --color-traffic-yellow: #febc2e;
+  --color-traffic-green: #28c840;
+}
+
+html {
+  background-color: var(--color-abyss);
+  color: var(--color-snow);
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background-color: rgba(0, 217, 146, 0.3);
+  color: var(--color-snow);
+}
+
+/* Blinking cursor */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* Prose styling for lesson content */
+.prose-terminal {
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: var(--color-parchment);
+  font-family: var(--font-mono);
+}
+
+@media (min-width: 640px) {
+  .prose-terminal {
+    font-size: 0.9375rem;
+  }
+}
+
+.prose-terminal p {
+  margin-bottom: 1rem;
+}
+
+.prose-terminal strong {
+  color: var(--color-emerald-signal);
+  font-weight: 600;
+}
+
+.prose-terminal em {
+  color: var(--color-snow);
+  font-style: italic;
+}
+
+.prose-terminal :first-child {
+  margin-top: 0;
+}
+
+.prose-terminal h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-emerald-signal);
+  margin-top: 1.75rem;
+  margin-bottom: 1rem;
+}
+
+.prose-terminal h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-emerald-signal);
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-terminal h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-snow);
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-terminal h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-snow);
+  margin-top: 1rem;
+  margin-bottom: 0.375rem;
+}
+
+.prose-terminal h5,
+.prose-terminal h6 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-slate-steel);
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.prose-terminal code {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  background-color: rgba(0, 217, 146, 0.1);
+  border: 1px solid rgba(0, 217, 146, 0.2);
+  border-radius: 3px;
+  padding: 0.15em 0.4em;
+  color: var(--color-emerald-signal);
+}
+
+.prose-terminal pre {
+  background-color: var(--color-abyss);
+  border: 1px solid var(--color-charcoal);
+  border-radius: 4px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.prose-terminal pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.6875rem;
+  line-height: 1.6;
+  color: var(--color-snow);
+}
+
+@media (min-width: 640px) {
+  .prose-terminal pre code {
+    font-size: 0.8125rem;
+  }
+}
+
+.prose-terminal a {
+  color: var(--color-emerald-signal);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose-terminal a:hover {
+  color: var(--color-volt-mint);
+}
+
+.prose-terminal ul,
+.prose-terminal ol {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.prose-terminal li {
+  margin-bottom: 0.25rem;
+}
+
+.prose-terminal li::marker {
+  color: var(--color-emerald-signal);
+}
+
+.prose-terminal blockquote {
+  border-left: 2px solid var(--color-emerald-signal);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--color-slate-steel);
+  font-style: italic;
+}

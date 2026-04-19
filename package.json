@@ -2,25 +2,35 @@
   "name": "dotslashlearn",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "vite dev",
+    "build": "vite build",
+    "start": "vite preview",
     "lint": "eslint"
   },
   "dependencies": {
-    "next": "16.2.4",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "@tanstack/react-router": "^1.120.0",
+    "@tanstack/react-start": "^1.120.0",
+    "gray-matter": "^4.0.3",
+    "motion": "^12.38.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@tailwindcss/vite": "^4",
+    "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.4",
+    "@vitejs/plugin-react": "^6",
+    "eslint": "^10.2.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.58.2",
+    "vite": "^8"
   }
 }

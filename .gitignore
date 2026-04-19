@@ -13,9 +13,9 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
+# tanstack start / vite
+/.output/
+/.vinxi/
 
 # production
 /build
@@ -33,9 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
-# vercel
-.vercel
-
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+
+# generated
+src/routeTree.gen.ts
+app.config.timestamp_*.js
