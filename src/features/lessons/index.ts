@@ -2,6 +2,8 @@ export { getAllLessons, getLesson, getAllCategories, getLessonsByCategory } from
 export { CategoryList } from "./CategoryList";
 export { CategoryView } from "./CategoryView";
 export { GroupedLessonList } from "./GroupedLessonList";
+export { LessonCard } from "./LessonCard";
+export { LessonCatalog } from "./LessonCatalog";
 export { LessonList } from "./LessonList";
 export { LessonRow } from "./LessonRow";
 export { LessonViewer } from "./LessonViewer";
