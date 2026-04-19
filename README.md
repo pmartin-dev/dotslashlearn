@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ./learn
 
-## Getting Started
+I love learning. Whether it's a new language feature, a mental model for async code, or a tool I just discovered -- I find that the best way to truly understand something is to explain it.
 
-First, run the development server:
+**./learn** is a personal learning platform where I turn my own learning journeys into interactive, step-by-step lessons. It's not a course platform or a documentation site. It's a place where I share what I learn, the way I wish someone had explained it to me.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## What it looks like
+
+A terminal-inspired UI with a dark theme, keyboard navigation, and interactive code blocks. Lessons are broken into digestible steps that you navigate through one at a time -- no endless scrolling.
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Framework | [TanStack Start](https://tanstack.com/start) (React 19, file-based routing, SSR) |
+| Language | TypeScript (strict mode) |
+| Styling | Tailwind CSS 4 with custom design tokens |
+| Validation | Zod (runtime schemas, single source of truth for types) |
+| Animation | Motion (framer-motion), respects `prefers-reduced-motion` |
+| Content | MDX with YAML frontmatter, step-based lesson format |
+| Build | Vite |
+| Package manager | pnpm |
+
+## Architecture
+
+The project follows a **feature-based architecture** with strict dependency rules.
+
+```
+src/
+├── features/          # domain logic, one folder per feature
+│   ├── lessons/       # lesson parsing, rendering, components
+│   ├── progress/      # progress tracking (localStorage-backed)
+│   └── home/          # landing page feature
+├── shared/            # only code used by 2+ features
+│   ├── components/    # ErrorBoundary, layout primitives
+│   └── styles/        # design tokens, prose-terminal styles
+├── routes/            # thin layer: routing + server functions only
+└── router.tsx
+
+content/
+└── lessons/           # MDX lesson files with YAML frontmatter
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Key principles
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Routes are thin.** They wire features to URLs. Zero business logic.
+- **Dependencies flow inward:** `routes -> features -> shared`. Never the reverse. Features never import from other features.
+- **Features are self-contained.** Delete the folder, delete the feature. Each one exposes a public API through an `index.ts` barrel.
+- **`shared/` is earned.** Code only moves there when genuinely used by 2+ features.
+- **Types are derived, not duplicated.** Zod schemas are the single source of truth; TypeScript types are inferred with `z.infer<>`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Content format
 
-## Learn More
+Lessons are MDX files in `content/lessons/`. Each lesson has YAML frontmatter (title, description, category, order) and is split into steps separated by `---`. This makes it easy to write focused, progressive content without any CMS.
 
-To learn more about Next.js, take a look at the following resources:
+## Getting started
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm install
+pnpm dev        # http://localhost:3000
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This is a personal project. Feel free to look around and get inspired.
