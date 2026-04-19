@@ -121,22 +121,49 @@ body {
   margin-bottom: 0.25rem;
 }
 
+/* Inline code */
 .prose-terminal code {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
-  background-color: rgba(0, 217, 146, 0.1);
-  border: 1px solid rgba(0, 217, 146, 0.2);
+  background-color: rgba(0, 217, 146, 0.08);
+  border: 1px solid rgba(0, 217, 146, 0.15);
   border-radius: 3px;
   padding: 0.15em 0.4em;
   color: var(--color-emerald-signal);
 }
 
-.prose-terminal pre {
-  background-color: var(--color-abyss);
+/* Code block wrapper */
+.prose-terminal .code-block {
+  margin: 1.25rem 0;
+  border-radius: 8px;
   border: 1px solid var(--color-charcoal);
-  border-radius: 4px;
+  border-left: 2px solid var(--color-emerald-signal);
+  overflow: hidden;
+  background-color: var(--color-carbon);
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  border-bottom: 1px solid var(--color-charcoal);
+  background-color: rgba(16, 16, 16, 0.8);
+}
+
+.code-block-lang {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--color-slate-steel);
+  text-transform: lowercase;
+}
+
+/* Fallback for bare <pre> without .code-block wrapper */
+.prose-terminal pre {
+  background-color: var(--color-carbon);
+  border: 1px solid var(--color-charcoal);
+  border-radius: 8px;
   padding: 1rem 1.25rem;
-  margin: 1rem 0;
+  margin: 1.25rem 0;
   overflow-x: auto;
 }
 
@@ -145,12 +172,30 @@ body {
   border: none;
   padding: 0;
   font-size: 0.6875rem;
-  line-height: 1.6;
+  line-height: 1.7;
+  color: var(--color-snow);
+}
+
+.prose-terminal .code-block pre {
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 1rem 1.25rem;
+  margin: 0;
+  overflow-x: auto;
+}
+
+.prose-terminal .code-block pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.6875rem;
+  line-height: 1.7;
   color: var(--color-snow);
 }
 
 @media (min-width: 640px) {
-  .prose-terminal pre code {
+  .prose-terminal .code-block pre code {
     font-size: 0.8125rem;
   }
 }
