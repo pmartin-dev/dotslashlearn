@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TerminalBlock } from "./TerminalBlock";
 
 const LANG_LABELS: Record<string, string> = {
   js: "javascript",
@@ -31,6 +32,16 @@ export function CodeBlock({
   className?: string;
 }) {
   const lang = formatLang(className);
+
+  if (lang === "terminal") {
+    const text =
+      typeof children === "string"
+        ? children
+        : Array.isArray(children)
+          ? children.filter((c): c is string => typeof c === "string").join("")
+          : "";
+    return <TerminalBlock>{text}</TerminalBlock>;
+  }
 
   return (
     <div className="code-block">

@@ -100,8 +100,8 @@ console.log("End");
 
 ---
 
-Output:
-```
+```terminal
+$ node timer.js
 Start
 End
 Timer done
@@ -249,8 +249,8 @@ Promise.resolve().then(() => console.log("promise"));
 console.log("sync");
 ```
 
-Output:
-```
+```terminal
+$ node microtask.js
 sync
 promise
 timeout
@@ -273,15 +273,15 @@ queueMicrotask(() => {
 console.log("D");
 ```
 
----
-
-Output:
-```
+```terminal
+$ node queue.js
 D
 B
 C
 A
 ```
+
+---
 
 Why? After `D` is logged (synchronous), the event loop finds `B` in the microtask queue. While processing `B`, a new microtask `C` is queued. The event loop **must** drain all microtasks before moving to the task queue -- so `C` runs before `A`.
 

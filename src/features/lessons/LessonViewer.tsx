@@ -60,6 +60,17 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
   }, [currentStep, prefersReducedMotion]);
 
   const goNext = useCallback(() => {
+    const stepEl = stepRefs.current.get(currentStep);
+    if (stepEl) {
+      const terminals = stepEl.querySelectorAll<HTMLElement>('[data-can-advance="true"]');
+      for (const terminal of terminals) {
+        if (terminal.dataset.canAdvance === "true") {
+          terminal.dispatchEvent(new CustomEvent("terminal:advance"));
+          return;
+        }
+      }
+    }
+
     if (isComplete) {
       progressStore.complete(slug);
       navigate({ to: "/" });
@@ -70,7 +81,7 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
         return next;
       });
     }
-  }, [isComplete, navigate, slug]);
+  }, [isComplete, navigate, slug, currentStep]);
 
   const goPrev = useCallback(() => {
     if (currentStep > 0) {
@@ -177,40 +188,45 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
           ))}
           <div className="h-[40vh]" />
         </div>
+      </div>
 
-        {/* Terminal prompt */}
-        <div className="border-t border-charcoal/50 bg-carbon">
-          <div className="mx-auto max-w-3xl px-4 sm:px-6 py-3">
-            {isComplete ? (
-              <div className="flex items-center justify-between font-mono text-xs sm:text-sm">
-                <span>
-                  <span className="text-emerald-signal">~</span>
-                  <span className="text-slate-steel"> $ </span>
-                  <span className="text-emerald-signal">echo</span>
-                  <span className="text-parchment">
-                    {" "}
-                    &quot;lesson complete&quot;
-                  </span>
+      {/* Bottom bar: keyboard hints */}
+      <div className="shrink-0 border-t border-charcoal/50 bg-carbon">
+        <div className="flex items-center justify-between px-6 py-3 font-mono text-xs text-slate-steel">
+          {isComplete ? (
+            <>
+              <span>
+                <span className="text-emerald-signal">~</span>
+                <span className="text-slate-steel"> $ </span>
+                <span className="text-emerald-signal">echo</span>
+                <span className="text-parchment">
+                  {" "}
+                  &quot;lesson complete&quot;
                 </span>
-                <Link
-                  to="/"
-                  className="text-slate-steel hover:text-emerald-signal transition-colors"
-                >
-                  cd ~
-                </Link>
-              </div>
-            ) : (
-              <button
-                onClick={goNext}
-                className="group flex w-full items-center font-mono text-xs sm:text-sm"
+              </span>
+              <Link
+                to="/"
+                className="text-slate-steel hover:text-emerald-signal transition-colors"
               >
-                <span className="ml-auto text-xs text-charcoal group-hover:text-slate-steel transition-colors">
-                  <span className="hidden sm:inline">press enter to continue</span>
-                  <span className="sm:hidden">tap to continue</span>
+                cd ~
+              </Link>
+            </>
+          ) : (
+            <>
+              <span className="sm:hidden">tap to continue</span>
+              <span className="hidden sm:flex items-center gap-3 ml-auto">
+                <span>
+                  <kbd className="rounded border border-charcoal bg-abyss px-1.5 py-0.5">→</kbd> next
                 </span>
-              </button>
-            )}
-          </div>
+                <span>
+                  <kbd className="rounded border border-charcoal bg-abyss px-1.5 py-0.5">←</kbd> prev
+                </span>
+                <span>
+                  <kbd className="rounded border border-charcoal bg-abyss px-1.5 py-0.5">esc</kbd> quit
+                </span>
+              </span>
+            </>
+          )}
         </div>
       </div>
     </div>

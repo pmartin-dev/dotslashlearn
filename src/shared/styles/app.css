@@ -231,3 +231,105 @@ body {
   color: var(--color-slate-steel);
   font-style: italic;
 }
+
+/* Interactive terminal simulation block */
+.terminal-block {
+  margin: 1.25rem 0;
+  border-radius: 8px;
+  border: 1px solid var(--color-charcoal);
+  overflow: hidden;
+  background-color: var(--color-carbon);
+}
+
+.terminal-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 1rem;
+  border-bottom: 1px solid var(--color-charcoal);
+  background-color: color-mix(in srgb, var(--color-carbon) 80%, transparent);
+}
+
+.terminal-block-title {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--color-slate-steel);
+  text-transform: lowercase;
+}
+
+.terminal-reset-btn {
+  all: unset;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--color-charcoal);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.terminal-reset-btn:hover {
+  color: var(--color-slate-steel);
+}
+
+.terminal-block-body {
+  padding: 1rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.7;
+}
+
+@media (min-width: 640px) {
+  .terminal-block-body {
+    font-size: 0.8125rem;
+  }
+}
+
+.terminal-entry {
+  margin-bottom: 0.25rem;
+}
+
+.terminal-entry:last-child {
+  margin-bottom: 0;
+}
+
+.terminal-prompt {
+  color: var(--color-emerald-signal);
+  user-select: none;
+}
+
+.terminal-command {
+  color: var(--color-snow);
+}
+
+.terminal-command-line {
+  padding: 0.125rem 0;
+}
+
+.terminal-output {
+  color: var(--color-slate-steel);
+  white-space: pre-wrap;
+  overflow: hidden;
+}
+
+.terminal-done {
+  opacity: 0.5;
+}
+
+.terminal-cursor {
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  background-color: var(--color-emerald-signal);
+  vertical-align: text-bottom;
+  animation: terminal-blink 1s step-end infinite;
+}
+
+@keyframes terminal-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-cursor {
+    animation: none;
+  }
+}
