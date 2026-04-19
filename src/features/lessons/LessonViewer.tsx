@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion, useReducedMotion } from "motion/react";
 import type { Lesson } from "./schema";
-import { toSlug } from "./schema";
 import { progressStore } from "@/features/progress/store";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { CodeBlock } from "./CodeBlock";
+import { useZoneKeyboard } from "@/shared/hooks/useKeyZone";
 
 const markdownComponents = {
   pre({ children }: { children?: React.ReactNode }) {
@@ -73,7 +73,7 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
 
     if (isComplete) {
       progressStore.complete(slug);
-      navigate({ to: "/" });
+      navigate({ to: "/learn" });
     } else {
       setCurrentStep((s) => {
         const next = s + 1;
@@ -89,24 +89,17 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
     }
   }, [currentStep]);
 
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowRight") {
-        e.preventDefault();
-        goNext();
-      }
-      if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
-        e.preventDefault();
-        goPrev();
-      }
-      if (e.key === "Escape") {
-        e.preventDefault();
-        navigate({ to: "/" });
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [goNext, goPrev, navigate]);
+  const handlers = useMemo(
+    () => ({
+      Enter: (e: KeyboardEvent) => { e.preventDefault(); goNext(); },
+      ArrowRight: (e: KeyboardEvent) => { e.preventDefault(); goNext(); },
+      ArrowLeft: (e: KeyboardEvent) => { e.preventDefault(); goPrev(); },
+      Escape: (e: KeyboardEvent) => { e.preventDefault(); navigate({ to: "/learn" }); },
+    }),
+    [goNext, goPrev, navigate],
+  );
+
+  useZoneKeyboard("content", handlers);
 
   return (
     <div className="flex h-full flex-col">
@@ -115,19 +108,15 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 font-mono text-xs sm:text-sm min-w-0">
             <Link
-              to="/"
+              to="/learn"
               className="shrink-0 text-slate-steel hover:text-emerald-signal transition-colors"
             >
               ~
             </Link>
             <span className="shrink-0 text-charcoal">/</span>
-            <Link
-              to="/categories/$slug"
-              params={{ slug: toSlug(category) }}
-              className="shrink-0 text-slate-steel hover:text-emerald-signal transition-colors"
-            >
+            <span className="shrink-0 text-slate-steel">
               {category}
-            </Link>
+            </span>
             <span className="shrink-0 text-charcoal">/</span>
             <span className="text-emerald-signal truncate">{title}</span>
           </div>
@@ -205,7 +194,7 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
                 </span>
               </span>
               <Link
-                to="/"
+                to="/learn"
                 className="text-slate-steel hover:text-emerald-signal transition-colors"
               >
                 cd ~
