@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import {
   Outlet,
   createRootRoute,
@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import appCss from "@/shared/styles/app.css?url";
 import { NotFound } from "@/shared/components/NotFound";
+import { Sidebar, SidebarToggle } from "@/shared/components/Sidebar";
 
 export const Route = createRootRoute({
   notFoundComponent: () => <NotFound />,
@@ -52,27 +53,31 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <html lang="en" className="h-full antialiased">
       <head>
         <HeadContent />
       </head>
       <body className="h-full bg-abyss text-snow p-2 sm:p-4">
-        <div className="flex h-full flex-col rounded-lg border border-charcoal bg-carbon overflow-hidden">
-          {/* Terminal title bar */}
-          <div className="flex shrink-0 items-center gap-2 border-b border-charcoal px-4 py-3">
-            <div className="flex gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-traffic-red" />
-              <span className="h-3 w-3 rounded-full bg-traffic-yellow" />
-              <span className="h-3 w-3 rounded-full bg-traffic-green" />
-            </div>
-            <span className="ml-2 font-mono text-xs text-slate-steel">
-              ./learn
-            </span>
-          </div>
+        <div className="flex h-full rounded-lg border border-charcoal bg-carbon overflow-hidden">
+          {/* Sidebar */}
+          <Sidebar
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+          />
 
-          {/* Terminal body */}
-          <main className="flex-1 overflow-hidden">{children}</main>
+          {/* Main area */}
+          <div className="flex flex-1 flex-col overflow-hidden">
+            {/* Mobile menu toggle */}
+            <div className="flex shrink-0 items-center px-4 py-3 lg:hidden">
+              <SidebarToggle onClick={() => setSidebarOpen(true)} />
+            </div>
+
+            {/* Terminal body */}
+            <main className="flex-1 overflow-hidden">{children}</main>
+          </div>
         </div>
         <Scripts />
       </body>

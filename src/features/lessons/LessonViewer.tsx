@@ -116,7 +116,14 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
       </div>
 
       {/* Step content */}
-      <div className="relative flex-1 overflow-y-auto">
+      <div
+        className="relative flex-1 overflow-y-auto sm:cursor-default cursor-pointer"
+        onClick={(e) => {
+          if (window.innerWidth < 640 && !isComplete && !(e.target as HTMLElement).closest("a")) {
+            goNext();
+          }
+        }}
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -160,16 +167,9 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
               onClick={goNext}
               className="group flex w-full items-center font-mono text-xs sm:text-sm"
             >
-              <span className="text-emerald-signal">~</span>
-              <span className="text-slate-steel"> $ </span>
-              <span className="text-parchment group-hover:text-snow transition-colors">
-                next
-              </span>
-              <span className="cursor-blink ml-0.5 text-emerald-signal">
-                _
-              </span>
-              <span className="ml-auto text-xs text-charcoal group-hover:text-slate-steel transition-colors hidden sm:inline">
-                press enter
+              <span className="ml-auto text-xs text-charcoal group-hover:text-slate-steel transition-colors">
+                <span className="hidden sm:inline">press enter to continue</span>
+                <span className="sm:hidden">tap to continue</span>
               </span>
             </button>
           )}
