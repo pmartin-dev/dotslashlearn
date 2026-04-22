@@ -96,10 +96,38 @@ export function HomePage({ lessons }: { lessons: LessonMeta[] }) {
 
         {/* Tagline */}
         <p className="mt-8 text-lg sm:text-xl text-secondary text-center max-w-md">
-          Interactive lessons for developers. Keyboard-driven.
+          Learn by doing. Interactive lessons and quizzes for developers.
         </p>
 
-        {/* Feature cards */}
+        {/* Features */}
+        <div className="mt-8 flex flex-col sm:flex-row items-center gap-6 sm:gap-8 text-center">
+          <div className="flex flex-col items-center gap-1.5">
+            <svg className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+            </svg>
+            <span className="text-sm font-semibold text-primary">Lessons</span>
+            <span className="text-xs text-muted">Step-by-step with live code</span>
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <svg className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M9 11l3 3L22 4" />
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+            </svg>
+            <span className="text-sm font-semibold text-primary">Quizzes</span>
+            <span className="text-xs text-muted">Test your knowledge as you go</span>
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <svg className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <path d="M6 8h.01M10 8h.01M14 8h4M6 12h12M6 16h8" />
+            </svg>
+            <span className="text-sm font-semibold text-primary">Keyboard-first</span>
+            <span className="text-xs text-muted">Navigate entirely from the keyboard</span>
+          </div>
+        </div>
+
+        {/* Navigation cards */}
         <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl">
           {cards.map((card, i) => (
             <Link

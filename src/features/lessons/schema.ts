@@ -14,6 +14,7 @@ export type Frontmatter = z.infer<typeof frontmatterSchema>;
 export interface LessonMeta extends Frontmatter {
   slug: string;
   stepCount: number;
+  quizCount: number;
 }
 
 export interface Lesson extends LessonMeta {

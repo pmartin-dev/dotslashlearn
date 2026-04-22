@@ -179,6 +179,19 @@ console.log("End");
 
 ---
 
+Let's check what you've retained so far.
+
+```quiz
+Where does a setTimeout callback go when the timer expires?
+- [ ] Directly onto the call stack
+- [x] Into the task queue
+- [ ] Into the microtask queue
+- [ ] Back to the Web API
+explanation: When a timer expires, the callback is placed in the task queue. The event loop then moves it to the call stack only when the stack is empty.
+```
+
+---
+
 ## The Microtask Queue
 
 Callback-based APIs use the task queue. But what about **Promises**?
@@ -362,3 +375,18 @@ Here's the complete mental model:
 ```
 
 Next time you see `async` code behaving in unexpected ways, trace through the queues. Once this model clicks, async JavaScript stops being magic.
+
+---
+
+```quiz
+What is the correct output of this code?
+
+setTimeout(() => console.log("A"), 0);
+Promise.resolve().then(() => console.log("B"));
+console.log("C");
+- [ ] A, B, C
+- [ ] C, A, B
+- [x] C, B, A
+- [ ] B, C, A
+explanation: C is synchronous so it runs first. Then the microtask queue is drained (Promise → B), and only after that the task queue runs (setTimeout → A).
+```

@@ -25,10 +25,15 @@ function Learn() {
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto px-6 pt-8 pb-6">
-        {/* Title */}
-        <h1 className="font-display text-4xl sm:text-5xl font-bold text-primary/15 mb-8 tracking-tight">
-          Catalog
-        </h1>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="font-display text-4xl sm:text-5xl font-bold text-primary/15 tracking-tight">
+            Catalog
+          </h1>
+          <p className="mt-2 text-sm text-muted">
+            {lessons.filter((l) => !l.draft).length} lessons · {lessons.reduce((sum, l) => sum + l.quizCount, 0)} quizzes
+          </p>
+        </div>
 
         {/* Lesson grid */}
         {lessons.length > 0 ? (

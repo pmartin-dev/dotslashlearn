@@ -13,6 +13,11 @@ function splitSteps(content: string): string[] {
     .filter(Boolean);
 }
 
+function countQuizzes(content: string): number {
+  const matches = content.match(/```quiz/g);
+  return matches ? matches.length : 0;
+}
+
 function parseLessonMeta(slug: string): LessonMeta | null {
   const filePath = path.join(LESSONS_DIR, `${slug}.mdx`);
   try {
@@ -21,8 +26,9 @@ function parseLessonMeta(slug: string): LessonMeta | null {
     const parsed = frontmatterSchema.parse(data);
     // Use splitSteps for consistency with parseLessonFull
     const stepCount = splitSteps(content).length;
+    const quizCount = countQuizzes(content);
 
-    return { slug, ...parsed, stepCount };
+    return { slug, ...parsed, stepCount, quizCount };
   } catch (err) {
     console.error(`Failed to parse lesson meta "${slug}":`, err);
     return null;
@@ -36,8 +42,9 @@ function parseLessonFull(slug: string): Lesson | null {
     const { data, content } = matter(raw);
     const parsed = frontmatterSchema.parse(data);
     const steps = splitSteps(content);
+    const quizCount = countQuizzes(content);
 
-    return { slug, ...parsed, stepCount: steps.length, steps };
+    return { slug, ...parsed, stepCount: steps.length, quizCount, steps };
   } catch (err) {
     console.error(`Failed to parse lesson "${slug}":`, err);
     return null;

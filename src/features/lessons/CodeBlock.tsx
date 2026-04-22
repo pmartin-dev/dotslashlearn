@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { TerminalBlock } from "./TerminalBlock";
+import { QuizBlock } from "./QuizBlock";
 
 const LANG_LABELS: Record<string, string> = {
   js: "javascript",
@@ -33,15 +34,21 @@ export function CodeBlock({
 }) {
   const lang = formatLang(className);
 
+  const text =
+    typeof children === "string"
+      ? children
+      : Array.isArray(children)
+        ? children.filter((c): c is string => typeof c === "string").join("")
+        : "";
+
   if (lang === "terminal") {
-    const text =
-      typeof children === "string"
-        ? children
-        : Array.isArray(children)
-          ? children.filter((c): c is string => typeof c === "string").join("")
-          : "";
     return <TerminalBlock>{text}</TerminalBlock>;
   }
+
+  if (lang === "quiz") {
+    return <QuizBlock>{text}</QuizBlock>;
+  }
+
 
   return (
     <div className="code-block">

@@ -45,6 +45,7 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
     return 0;
   });
   const [highestStep, setHighestStep] = useState(currentStep);
+  const [stepBlocked, setStepBlocked] = useState(false);
   const isComplete = currentStep === total - 1;
 
   useEffect(() => {
@@ -58,6 +59,21 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
       block: "center",
     });
   }, [currentStep, prefersReducedMotion]);
+
+  useEffect(() => {
+    const stepEl = stepRefs.current.get(currentStep);
+    if (!stepEl) { setStepBlocked(false); return; }
+
+    const check = () => {
+      const hasQuizBlocker = stepEl.querySelector('.quiz-block[data-can-advance="true"]') !== null;
+      setStepBlocked(hasQuizBlocker);
+    };
+    check();
+
+    const observer = new MutationObserver(check);
+    observer.observe(stepEl, { attributes: true, subtree: true, attributeFilter: ["data-can-advance"] });
+    return () => observer.disconnect();
+  }, [currentStep]);
 
   const goNext = useCallback(() => {
     const stepEl = stepRefs.current.get(currentStep);
@@ -196,10 +212,11 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
             </>
           ) : (
             <>
-              <span className="sm:hidden">tap to continue</span>
+              <span className={`sm:hidden text-brand ${stepBlocked ? "" : "animate-pulse"}`}>tap to continue</span>
               <span className="hidden sm:flex items-center gap-3 ml-auto">
-                <span>
-                  <kbd className="rounded-md border border-subtle bg-surface px-1.5 py-0.5 text-[11px] font-mono">→</kbd> next
+                <span className={`flex items-center gap-1 ${stepBlocked ? "" : "next-hint"}`}>
+                  <kbd className={`rounded-md px-1.5 py-0.5 text-[11px] font-mono ${stepBlocked ? "border border-subtle bg-surface text-muted" : "next-hint-kbd border border-brand/40 bg-brand/10 text-brand"}`}>→</kbd>
+                  <span className={stepBlocked ? "text-muted" : "text-brand font-medium"}>next</span>
                 </span>
                 <span>
                   <kbd className="rounded-md border border-subtle bg-surface px-1.5 py-0.5 text-[11px] font-mono">←</kbd> prev
