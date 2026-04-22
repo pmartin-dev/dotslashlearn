@@ -11,6 +11,12 @@ import { NotFound } from "@/shared/components/NotFound";
 import { Sidebar, SidebarToggle } from "@/shared/components/Sidebar";
 import { KeyZoneContext, type Zone } from "@/shared/hooks/useKeyZone";
 
+/**
+ * Inline script to apply the saved theme before first paint (prevents flash).
+ * This is a static constant — not user-provided content — so it's safe to inject.
+ */
+const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='light'){document.documentElement.classList.remove('dark')}else{document.documentElement.classList.add('dark')}}catch(e){document.documentElement.classList.add('dark')}})()`;
+
 export const Route = createRootRoute({
   notFoundComponent: () => <NotFound />,
   head: () => ({
@@ -38,7 +44,7 @@ export const Route = createRootRoute({
       },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700&family=Poppins:wght@500&family=JetBrains+Mono:wght@400;500;600;700&display=swap",
       },
     ],
   }),
@@ -53,9 +59,24 @@ function RootComponent() {
   );
 }
 
+function getInitialDark(): boolean {
+  if (typeof document === "undefined") return true; // SSR default: dark
+  return document.documentElement.classList.contains("dark");
+}
+
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeZone, setActiveZone] = useState<Zone>("content");
+  const [isDark, setIsDark] = useState(getInitialDark);
+
+  // Sync with Sidebar's toggle via DOM observation
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   const handleTab = useCallback(
     (e: KeyboardEvent) => {
@@ -74,27 +95,25 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   }, [handleTab]);
 
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" suppressHydrationWarning className={`h-full antialiased ${isDark ? "dark" : ""}`}>
       <head>
         <HeadContent />
+        {/* Static theme-init script — safe, no user input */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="h-full bg-abyss text-snow p-2 sm:p-4">
+      <body className="h-full bg-surface text-primary">
         <KeyZoneContext value={{ activeZone, setActiveZone }}>
-          <div className="flex h-full rounded-lg border border-charcoal bg-carbon overflow-hidden">
-            {/* Sidebar */}
+          <div className="flex h-full overflow-hidden">
             <Sidebar
               isOpen={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
             />
 
-            {/* Main area */}
             <div className="flex flex-1 flex-col overflow-hidden">
-              {/* Mobile menu toggle */}
               <div className="flex shrink-0 items-center px-4 py-3 lg:hidden">
                 <SidebarToggle onClick={() => setSidebarOpen(true)} />
               </div>
 
-              {/* Terminal body */}
               <main className="flex-1 overflow-hidden">{children}</main>
             </div>
           </div>

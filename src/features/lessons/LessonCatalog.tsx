@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { LessonMeta } from "./schema";
 import type { ProgressData } from "@/features/progress/store";
@@ -6,11 +6,37 @@ import { progressStore } from "@/features/progress/store";
 import { LessonCard } from "./LessonCard";
 import { useZoneKeyboard } from "@/shared/hooks/useKeyZone";
 
+type SubZone = "filters" | "cards";
+
+function useGridColumns(ref: React.RefObject<HTMLDivElement | null>): number {
+  const [cols, setCols] = useState(1);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const first = el.children[0] as HTMLElement | undefined;
+      if (!first) return;
+      const gridWidth = el.clientWidth;
+      const itemWidth = first.offsetWidth;
+      if (itemWidth > 0) setCols(Math.round(gridWidth / itemWidth));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+  return cols;
+}
+
 export function LessonCatalog({ lessons }: { lessons: LessonMeta[] }) {
   const navigate = useNavigate();
   const [progress, setProgress] = useState<ProgressData>({});
   const [selected, setSelected] = useState(0);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [subZone, setSubZone] = useState<SubZone>("cards");
+  const [filterIndex, setFilterIndex] = useState(0);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const cols = useGridColumns(gridRef);
 
   const categories = useMemo(
     () => [...new Set(lessons.map((l) => l.category))].sort(),
@@ -27,10 +53,17 @@ export function LessonCatalog({ lessons }: { lessons: LessonMeta[] }) {
     [filtered],
   );
 
-  // All category options: [null, ...categories]
   const categoryOptions = useMemo<Array<string | null>>(
     () => [null, ...categories],
     [categories],
+  );
+
+  // Sync filterIndex when activeCategory changes externally (click)
+  const syncFilterIndex = useCallback(
+    (cat: string | null) => {
+      setFilterIndex(Math.max(0, categoryOptions.indexOf(cat)));
+    },
+    [categoryOptions],
   );
 
   // Reset selection when filter changes
@@ -62,90 +95,113 @@ export function LessonCatalog({ lessons }: { lessons: LessonMeta[] }) {
     () => ({
       ArrowLeft: (e: KeyboardEvent) => {
         e.preventDefault();
-        setActiveCategory((current) => {
-          const idx = categoryOptions.indexOf(current);
-          return categoryOptions[(idx - 1 + categoryOptions.length) % categoryOptions.length];
-        });
+        if (subZone === "filters") {
+          setFilterIndex((i) => {
+            const next = (i - 1 + categoryOptions.length) % categoryOptions.length;
+            setActiveCategory(categoryOptions[next]);
+            return next;
+          });
+        } else {
+          setSelected((s) => Math.max(s - 1, 0));
+        }
       },
       ArrowRight: (e: KeyboardEvent) => {
         e.preventDefault();
-        setActiveCategory((current) => {
-          const idx = categoryOptions.indexOf(current);
-          return categoryOptions[(idx + 1) % categoryOptions.length];
-        });
-      },
-      ArrowDown: (e: KeyboardEvent) => {
-        e.preventDefault();
-        setSelected((s) => Math.min(s + 1, navigable.length - 1));
+        if (subZone === "filters") {
+          setFilterIndex((i) => {
+            const next = (i + 1) % categoryOptions.length;
+            setActiveCategory(categoryOptions[next]);
+            return next;
+          });
+        } else {
+          setSelected((s) => Math.min(s + 1, navigable.length - 1));
+        }
       },
       ArrowUp: (e: KeyboardEvent) => {
         e.preventDefault();
-        setSelected((s) => Math.max(s - 1, 0));
+        if (subZone === "cards") {
+          setSelected((s) => {
+            const next = s - cols;
+            if (next < 0) {
+              setSubZone("filters");
+              return s;
+            }
+            return next;
+          });
+        }
+      },
+      ArrowDown: (e: KeyboardEvent) => {
+        e.preventDefault();
+        if (subZone === "filters") {
+          setSubZone("cards");
+        } else {
+          setSelected((s) => Math.min(s + cols, navigable.length - 1));
+        }
       },
       Enter: (e: KeyboardEvent) => {
         e.preventDefault();
-        open();
+        if (subZone === "cards") open();
       },
       Escape: (e: KeyboardEvent) => {
         e.preventDefault();
-        navigate({ to: "/" });
+        if (subZone === "filters") {
+          setSubZone("cards");
+        } else {
+          navigate({ to: "/" });
+        }
       },
     }),
-    [categoryOptions, navigable.length, open, navigate],
+    [categoryOptions, navigable.length, open, navigate, subZone, cols],
   );
 
   useZoneKeyboard("content", handlers);
 
-  // Build a set of navigable slugs to track selected index
   let navIndex = 0;
 
   return (
     <div>
-      {/* Category filter */}
-      <div className="mb-6 flex flex-wrap gap-2 font-mono text-xs">
-        <button
-          type="button"
-          onClick={() => setActiveCategory(null)}
-          className={`cursor-pointer rounded border px-3 py-1.5 transition-colors ${
-            activeCategory === null
-              ? "border-emerald-signal/40 bg-emerald-signal/10 text-emerald-signal"
-              : "border-charcoal text-slate-steel hover:text-snow hover:border-slate-steel"
-          }`}
-        >
-          ALL
-        </button>
-        {categories.map((cat) => (
+      {/* Category filter — pill buttons */}
+      <div className="mb-6 flex flex-wrap gap-2 text-sm">
+        {categoryOptions.map((cat, i) => (
           <button
-            key={cat}
+            key={cat ?? "__all"}
             type="button"
-            onClick={() => setActiveCategory(cat)}
-            className={`cursor-pointer rounded border px-3 py-1.5 transition-colors ${
+            onClick={() => {
+              setActiveCategory(cat);
+              syncFilterIndex(cat);
+              setSubZone("filters");
+            }}
+            className={`cursor-pointer rounded-full border px-4 py-1.5 font-medium transition-colors ${
               activeCategory === cat
-                ? "border-emerald-signal/40 bg-emerald-signal/10 text-emerald-signal"
-                : "border-charcoal text-slate-steel hover:text-snow hover:border-slate-steel"
+                ? subZone === "filters" && filterIndex === i
+                  ? "border-brand bg-brand-bg text-brand ring-2 ring-brand/20"
+                  : "border-brand/30 bg-brand-bg text-brand"
+                : subZone === "filters" && filterIndex === i
+                  ? "border-brand/50 text-primary ring-2 ring-brand/20"
+                  : "border-subtle text-muted hover:text-primary hover:border-secondary"
             }`}
           >
-            {cat.toUpperCase()}
+            {cat ?? "All"}
           </button>
         ))}
       </div>
 
       {/* Lesson grid */}
-      <div className="flex flex-col gap-3 max-w-2xl">
-      {filtered.map((lesson) => {
-        const isNavigable = !lesson.draft;
-        const currentNavIndex = isNavigable ? navIndex++ : -1;
+      <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.map((lesson) => {
+          const isNavigable = !lesson.draft;
+          const currentNavIndex = isNavigable ? navIndex++ : -1;
 
-        return (
-          <LessonCard
-            key={lesson.slug}
-            lesson={lesson}
-            completed={progress[lesson.slug]?.completed ?? false}
-            currentStep={progress[lesson.slug]?.currentStep}
-            isSelected={currentNavIndex === selected}
-          />
-        );
-      })}
+          return (
+            <LessonCard
+              key={lesson.slug}
+              lesson={lesson}
+              completed={progress[lesson.slug]?.completed ?? false}
+              currentStep={progress[lesson.slug]?.currentStep}
+              isSelected={subZone === "cards" && currentNavIndex === selected}
+            />
+          );
+        })}
       </div>
     </div>
   );

@@ -88,8 +88,8 @@ export function CategoryView({ category }: { category: CategoryDetail }) {
       {/* Subcategory sections */}
       {category.subcategories.map((sub) => (
         <div key={sub.name}>
-          <div className="px-3 pt-4 pb-1 font-mono text-xs text-slate-steel">
-            <span className="text-charcoal">##</span> {sub.name}
+          <div className="px-3 pt-4 pb-1 text-xs text-muted font-medium">
+            {sub.name}
           </div>
           {sub.lessons.map((lesson) => {
             const idx = runningIndex++;

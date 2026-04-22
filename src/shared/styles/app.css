@@ -1,32 +1,70 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu,
-    Cantarell, "Noto Sans", Helvetica, Arial, sans-serif;
+  --font-sans: "DM Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-display: "Outfit", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
-  --font-heading: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu,
-    Cantarell, "Noto Sans", Helvetica, Arial, sans-serif;
+}
 
-  /* VoltAgent colors */
-  --color-abyss: #050507;
-  --color-carbon: #101010;
-  --color-charcoal: #3d3a39;
-  --color-emerald-signal: #00d992;
-  --color-volt-mint: #2fd6a1;
-  --color-snow: #f2f2f2;
-  --color-parchment: #b8b3b0;
-  --color-slate-steel: #8b949e;
+@theme {
+  /* Surfaces */
+  --color-surface: #ffffff;
+  --color-surface-dim: #f8f9fa;
+  --color-surface-hover: #f0f0f0;
 
-  /* Terminal traffic-light buttons */
-  --color-traffic-red: #ff5f57;
-  --color-traffic-yellow: #febc2e;
-  --color-traffic-green: #28c840;
+  /* Text */
+  --color-primary: #222222;
+  --color-secondary: #45515e;
+  --color-muted: #8e8e93;
+
+  /* Brand */
+  --color-brand: #1456f0;
+  --color-brand-hover: #2563eb;
+  --color-brand-light: #60a5fa;
+  --color-brand-bg: #eff6ff;
+
+  /* Accent */
+  --color-accent: #ea5ec1;
+
+  /* Borders & Subtle */
+  --color-subtle: #e5e7eb;
+  --color-border: #f2f3f5;
+
+  /* Dark surfaces */
+  --color-dark: #181e25;
+
+  /* Code blocks (always dark) */
+  --color-code-bg: #1a1b26;
+  --color-code-border: #2a2b3d;
+  --color-code-text: #c0caf5;
+  --color-code-accent: #7aa2f7;
+}
+
+/* Dark theme overrides */
+.dark {
+  --color-surface: #0c0c0e;
+  --color-surface-dim: #080809;
+  --color-surface-hover: #1a1a1e;
+
+  --color-primary: #f2f2f2;
+  --color-secondary: #b8b3b0;
+  --color-muted: #8b949e;
+
+  --color-brand: #3b82f6;
+  --color-brand-hover: #60a5fa;
+  --color-brand-light: #93bbfd;
+  --color-brand-bg: rgba(59, 130, 246, 0.1);
+
+  --color-subtle: #2a2a2e;
+  --color-border: #1e1e22;
+
+  --color-dark: #060608;
 }
 
 html {
-  background-color: var(--color-abyss);
-  color: var(--color-snow);
+  background-color: var(--color-surface);
+  color: var(--color-primary);
 }
 
 body {
@@ -34,8 +72,8 @@ body {
 }
 
 ::selection {
-  background-color: rgba(0, 217, 146, 0.3);
-  color: var(--color-snow);
+  background-color: rgba(20, 86, 240, 0.15);
+  color: var(--color-primary);
 }
 
 /* Blinking cursor */
@@ -50,15 +88,15 @@ body {
 
 /* Prose styling for lesson content */
 .prose-terminal {
-  font-size: 0.8125rem;
-  line-height: 1.7;
-  color: var(--color-parchment);
-  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-secondary);
+  font-family: var(--font-sans);
 }
 
 @media (min-width: 640px) {
   .prose-terminal {
-    font-size: 0.9375rem;
+    font-size: 1.0625rem;
   }
 }
 
@@ -67,12 +105,12 @@ body {
 }
 
 .prose-terminal strong {
-  color: var(--color-emerald-signal);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 .prose-terminal em {
-  color: var(--color-snow);
+  color: var(--color-primary);
   font-style: italic;
 }
 
@@ -81,34 +119,36 @@ body {
 }
 
 .prose-terminal h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-emerald-signal);
-  margin-top: 1.75rem;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-top: 2rem;
   margin-bottom: 1rem;
 }
 
 .prose-terminal h2 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-emerald-signal);
-  margin-top: 1.5rem;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-top: 1.75rem;
   margin-bottom: 0.75rem;
 }
 
 .prose-terminal h3 {
-  font-size: 1.1rem;
+  font-size: 1.125rem;
   font-weight: 600;
-  color: var(--color-snow);
-  margin-top: 1.25rem;
+  color: var(--color-primary);
+  margin-top: 1.5rem;
   margin-bottom: 0.5rem;
 }
 
 .prose-terminal h4 {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-snow);
-  margin-top: 1rem;
+  color: var(--color-primary);
+  margin-top: 1.25rem;
   margin-bottom: 0.375rem;
 }
 
@@ -116,7 +156,7 @@ body {
 .prose-terminal h6 {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-slate-steel);
+  color: var(--color-muted);
   margin-top: 0.75rem;
   margin-bottom: 0.25rem;
 }
@@ -124,56 +164,61 @@ body {
 /* Inline code */
 .prose-terminal code {
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  background-color: rgba(0, 217, 146, 0.08);
-  border: 1px solid rgba(0, 217, 146, 0.15);
-  border-radius: 3px;
-  padding: 0.15em 0.4em;
-  color: var(--color-emerald-signal);
+  font-size: 0.875rem;
+  background-color: var(--color-brand-bg);
+  border: 1px solid rgba(20, 86, 240, 0.12);
+  border-radius: 6px;
+  padding: 0.15em 0.45em;
+  color: var(--color-brand);
 }
 
-/* Code block wrapper */
+.dark .prose-terminal code {
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+/* Code block wrapper — stays dark */
 .prose-terminal .code-block {
   margin: 1.25rem 0;
-  border-radius: 8px;
-  border: 1px solid var(--color-charcoal);
-  border-left: 2px solid var(--color-emerald-signal);
+  border-radius: 12px;
+  border: 1px solid var(--color-code-border);
   overflow: hidden;
-  background-color: var(--color-carbon);
+  background-color: var(--color-code-bg);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.06);
 }
 
 .code-block-header {
   display: flex;
   align-items: center;
   padding: 0.4rem 1rem;
-  border-bottom: 1px solid var(--color-charcoal);
-  background-color: rgba(16, 16, 16, 0.8);
+  border-bottom: 1px solid var(--color-code-border);
+  background-color: rgba(26, 27, 38, 0.9);
 }
 
 .code-block-lang {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
-  color: var(--color-slate-steel);
+  color: var(--color-code-accent);
   text-transform: lowercase;
 }
 
 /* Fallback for bare <pre> without .code-block wrapper */
 .prose-terminal pre {
-  background-color: var(--color-carbon);
-  border: 1px solid var(--color-charcoal);
-  border-radius: 8px;
+  background-color: var(--color-code-bg);
+  border: 1px solid var(--color-code-border);
+  border-radius: 12px;
   padding: 1rem 1.25rem;
   margin: 1.25rem 0;
   overflow-x: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.06);
 }
 
 .prose-terminal pre code {
   background: none;
   border: none;
   padding: 0;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   line-height: 1.7;
-  color: var(--color-snow);
+  color: var(--color-code-text);
 }
 
 .prose-terminal .code-block pre {
@@ -183,31 +228,32 @@ body {
   padding: 1rem 1.25rem;
   margin: 0;
   overflow-x: auto;
+  box-shadow: none;
 }
 
 .prose-terminal .code-block pre code {
   background: none;
   border: none;
   padding: 0;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   line-height: 1.7;
-  color: var(--color-snow);
+  color: var(--color-code-text);
 }
 
 @media (min-width: 640px) {
   .prose-terminal .code-block pre code {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
   }
 }
 
 .prose-terminal a {
-  color: var(--color-emerald-signal);
+  color: var(--color-brand);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .prose-terminal a:hover {
-  color: var(--color-volt-mint);
+  color: var(--color-brand-hover);
 }
 
 .prose-terminal ul,
@@ -221,24 +267,25 @@ body {
 }
 
 .prose-terminal li::marker {
-  color: var(--color-emerald-signal);
+  color: var(--color-brand);
 }
 
 .prose-terminal blockquote {
-  border-left: 2px solid var(--color-emerald-signal);
+  border-left: 3px solid var(--color-brand);
   padding-left: 1rem;
   margin: 1rem 0;
-  color: var(--color-slate-steel);
+  color: var(--color-muted);
   font-style: italic;
 }
 
-/* Interactive terminal simulation block */
+/* Interactive terminal simulation block — stays dark */
 .terminal-block {
   margin: 1.25rem 0;
-  border-radius: 8px;
-  border: 1px solid var(--color-charcoal);
+  border-radius: 12px;
+  border: 1px solid var(--color-code-border);
   overflow: hidden;
-  background-color: var(--color-carbon);
+  background-color: var(--color-code-bg);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.06);
 }
 
 .terminal-block-header {
@@ -246,14 +293,14 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0.4rem 1rem;
-  border-bottom: 1px solid var(--color-charcoal);
-  background-color: color-mix(in srgb, var(--color-carbon) 80%, transparent);
+  border-bottom: 1px solid var(--color-code-border);
+  background-color: rgba(26, 27, 38, 0.9);
 }
 
 .terminal-block-title {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
-  color: var(--color-slate-steel);
+  color: var(--color-code-accent);
   text-transform: lowercase;
 }
 
@@ -261,25 +308,25 @@ body {
   all: unset;
   font-family: var(--font-mono);
   font-size: 0.625rem;
-  color: var(--color-charcoal);
+  color: rgba(192, 202, 245, 0.4);
   cursor: pointer;
   transition: color 0.15s;
 }
 
 .terminal-reset-btn:hover {
-  color: var(--color-slate-steel);
+  color: var(--color-code-text);
 }
 
 .terminal-block-body {
   padding: 1rem 1.25rem;
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   line-height: 1.7;
 }
 
 @media (min-width: 640px) {
   .terminal-block-body {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
   }
 }
 
@@ -292,12 +339,12 @@ body {
 }
 
 .terminal-prompt {
-  color: var(--color-emerald-signal);
+  color: var(--color-code-accent);
   user-select: none;
 }
 
 .terminal-command {
-  color: var(--color-snow);
+  color: var(--color-code-text);
 }
 
 .terminal-command-line {
@@ -305,7 +352,7 @@ body {
 }
 
 .terminal-output {
-  color: var(--color-slate-steel);
+  color: rgba(192, 202, 245, 0.6);
   white-space: pre-wrap;
   overflow: hidden;
 }
@@ -317,9 +364,9 @@ body {
 .terminal-cursor {
   display: inline-block;
   width: 0.5em;
-  height: 1em;
-  background-color: var(--color-emerald-signal);
-  vertical-align: text-bottom;
+  height: 1.15em;
+  background-color: var(--color-code-accent);
+  vertical-align: middle;
   animation: terminal-blink 1s step-end infinite;
 }
 
@@ -332,4 +379,29 @@ body {
   .terminal-cursor {
     animation: none;
   }
+}
+
+/* Shadow utilities */
+.shadow-brand {
+  box-shadow: 0 0 15px rgba(44, 30, 116, 0.16);
+}
+
+.dark .shadow-brand {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+}
+
+.shadow-card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+}
+
+.dark .shadow-card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.shadow-card-hover {
+  box-shadow: 0 12px 16px -4px rgba(36, 36, 36, 0.08);
+}
+
+.dark .shadow-card-hover {
+  box-shadow: 0 12px 16px -4px rgba(0, 0, 0, 0.4);
 }

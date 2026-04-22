@@ -12,15 +12,15 @@ export function LessonRow({
 }) {
   if (lesson.draft) {
     return (
-      <div className="rounded px-3 py-2 font-mono text-sm opacity-40">
+      <div className="rounded-lg px-3 py-2 text-sm opacity-40">
         {/* Desktop */}
         <div className="hidden sm:grid grid-cols-[1rem_12rem_1.5rem_1fr_auto] items-baseline gap-x-2">
-          <span className="text-charcoal"> </span>
-          <span className="text-slate-steel line-through truncate">
+          <span className="text-subtle"> </span>
+          <span className="text-muted line-through truncate">
             {lesson.title}
           </span>
-          <span className="text-charcoal">--</span>
-          <span className="text-xs text-slate-steel italic truncate">
+          <span className="text-subtle">--</span>
+          <span className="text-xs text-muted italic truncate">
             coming soon
           </span>
           <span />
@@ -28,12 +28,12 @@ export function LessonRow({
         {/* Mobile */}
         <div className="sm:hidden">
           <div className="flex items-center gap-2">
-            <span className="w-4 text-charcoal"> </span>
-            <span className="text-slate-steel line-through">
+            <span className="w-4 text-subtle"> </span>
+            <span className="text-muted line-through">
               {lesson.title}
             </span>
           </div>
-          <div className="ml-6 mt-1 text-xs text-slate-steel italic">
+          <div className="ml-6 mt-1 text-xs text-muted italic">
             coming soon
           </div>
         </div>
@@ -45,33 +45,33 @@ export function LessonRow({
     <Link
       to="/lessons/$slug"
       params={{ slug: lesson.slug }}
-      className={`group block rounded px-3 py-2 font-mono text-sm transition-colors ${
+      className={`group block rounded-lg px-3 py-2 text-sm transition-colors ${
         isSelected
-          ? "bg-emerald-signal/10 text-emerald-signal"
-          : "text-parchment hover:text-snow"
+          ? "bg-brand-bg text-brand"
+          : "text-secondary hover:text-primary hover:bg-surface-hover"
       }`}
     >
       {/* Desktop */}
       <div className="hidden sm:grid grid-cols-[1rem_12rem_1.5rem_1fr_auto] items-baseline gap-x-2">
         <span
-          className={isSelected ? "text-emerald-signal" : "text-charcoal"}
+          className={isSelected ? "text-brand" : "text-subtle"}
         >
-          {isSelected ? ">" : " "}
+          {isSelected ? "›" : " "}
         </span>
         <span
-          className={`truncate ${isSelected ? "text-emerald-signal" : "text-snow"}`}
+          className={`truncate font-medium ${isSelected ? "text-brand" : "text-primary"}`}
         >
           {lesson.title}
         </span>
-        <span className="text-charcoal">--</span>
-        <span className="text-xs text-slate-steel truncate">
+        <span className="text-subtle">—</span>
+        <span className="text-xs text-muted truncate">
           {lesson.description}
         </span>
         <span className="text-xs whitespace-nowrap pl-2">
           {completed ? (
-            <span className="text-emerald-signal">done</span>
+            <span className="text-brand font-medium">done</span>
           ) : (
-            <span className="text-charcoal">{lesson.stepCount} steps</span>
+            <span className="text-muted">{lesson.stepCount} steps</span>
           )}
         </span>
       </div>
@@ -79,24 +79,24 @@ export function LessonRow({
       <div className="sm:hidden">
         <div className="flex items-center gap-2">
           <span
-            className={`w-4 shrink-0 ${isSelected ? "text-emerald-signal" : "text-charcoal"}`}
+            className={`w-4 shrink-0 ${isSelected ? "text-brand" : "text-subtle"}`}
           >
-            {isSelected ? ">" : " "}
+            {isSelected ? "›" : " "}
           </span>
           <span
-            className={isSelected ? "text-emerald-signal" : "text-snow"}
+            className={`font-medium ${isSelected ? "text-brand" : "text-primary"}`}
           >
             {lesson.title}
           </span>
           <span className="ml-auto text-xs shrink-0">
             {completed ? (
-              <span className="text-emerald-signal">done</span>
+              <span className="text-brand font-medium">done</span>
             ) : (
-              <span className="text-charcoal">{lesson.stepCount} steps</span>
+              <span className="text-muted">{lesson.stepCount} steps</span>
             )}
           </span>
         </div>
-        <div className="ml-6 mt-1 text-xs text-slate-steel">
+        <div className="ml-6 mt-1 text-xs text-muted">
           {lesson.description}
         </div>
       </div>

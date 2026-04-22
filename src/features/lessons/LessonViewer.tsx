@@ -104,31 +104,31 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
   return (
     <div className="flex h-full flex-col">
       {/* Top bar: lesson info */}
-      <div className="sticky top-0 z-10 shrink-0 border-b border-charcoal/50 bg-carbon px-4 sm:px-6 py-3">
+      <div className="sticky top-0 z-10 shrink-0 border-b border-subtle bg-surface px-4 sm:px-6 py-3">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3 font-mono text-xs sm:text-sm min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 text-sm min-w-0">
             <Link
               to="/learn"
-              className="shrink-0 text-slate-steel hover:text-emerald-signal transition-colors"
+              className="shrink-0 text-muted hover:text-brand transition-colors"
             >
               ~
             </Link>
-            <span className="shrink-0 text-charcoal">/</span>
-            <span className="shrink-0 text-slate-steel">
+            <span className="shrink-0 text-subtle">/</span>
+            <span className="shrink-0 text-muted">
               {category}
             </span>
-            <span className="shrink-0 text-charcoal">/</span>
-            <span className="text-emerald-signal truncate">{title}</span>
+            <span className="shrink-0 text-subtle">/</span>
+            <span className="text-primary font-medium truncate">{title}</span>
           </div>
-          <span className="shrink-0 font-mono text-xs text-slate-steel ml-2">
-            [{currentStep + 1}/{total}]
+          <span className="shrink-0 text-xs text-muted ml-2 font-mono">
+            {currentStep + 1}/{total}
           </span>
         </div>
 
         {/* Progress bar */}
-        <div className="mt-2 h-px w-full bg-charcoal/30">
+        <div className="mt-2 h-0.5 w-full rounded-full bg-subtle">
           <motion.div
-            className="h-full bg-emerald-signal"
+            className="h-full rounded-full bg-brand"
             initial={false}
             animate={{ width: `${((currentStep + 1) / total) * 100}%` }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: "easeOut" }}
@@ -171,7 +171,7 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
                 </ReactMarkdown>
               </ErrorBoundary>
               {i < currentStep && (
-                <div className="mt-16 border-b border-charcoal/20" />
+                <div className="mt-16 border-b border-subtle/40" />
               )}
             </motion.div>
           ))}
@@ -180,24 +180,18 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
       </div>
 
       {/* Bottom bar: keyboard hints */}
-      <div className="shrink-0 border-t border-charcoal/50 bg-carbon">
-        <div className="flex items-center justify-between px-6 py-3 font-mono text-xs text-slate-steel">
+      <div className="shrink-0 border-t border-subtle bg-surface-dim">
+        <div className="flex items-center justify-between px-6 py-3 text-xs text-muted">
           {isComplete ? (
             <>
-              <span>
-                <span className="text-emerald-signal">~</span>
-                <span className="text-slate-steel"> $ </span>
-                <span className="text-emerald-signal">echo</span>
-                <span className="text-parchment">
-                  {" "}
-                  &quot;lesson complete&quot;
-                </span>
+              <span className="font-medium text-brand">
+                Lesson complete!
               </span>
               <Link
                 to="/learn"
-                className="text-slate-steel hover:text-emerald-signal transition-colors"
+                className="text-muted hover:text-brand transition-colors font-medium"
               >
-                cd ~
+                Back to catalog
               </Link>
             </>
           ) : (
@@ -205,13 +199,13 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
               <span className="sm:hidden">tap to continue</span>
               <span className="hidden sm:flex items-center gap-3 ml-auto">
                 <span>
-                  <kbd className="rounded border border-charcoal bg-abyss px-1.5 py-0.5">→</kbd> next
+                  <kbd className="rounded-md border border-subtle bg-surface px-1.5 py-0.5 text-[11px] font-mono">→</kbd> next
                 </span>
                 <span>
-                  <kbd className="rounded border border-charcoal bg-abyss px-1.5 py-0.5">←</kbd> prev
+                  <kbd className="rounded-md border border-subtle bg-surface px-1.5 py-0.5 text-[11px] font-mono">←</kbd> prev
                 </span>
                 <span>
-                  <kbd className="rounded border border-charcoal bg-abyss px-1.5 py-0.5">esc</kbd> quit
+                  <kbd className="rounded-md border border-subtle bg-surface px-1.5 py-0.5 text-[11px] font-mono">esc</kbd> quit
                 </span>
               </span>
             </>

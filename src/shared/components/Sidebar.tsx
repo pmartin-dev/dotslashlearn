@@ -1,11 +1,32 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link, useMatches, useNavigate } from "@tanstack/react-router";
 import { useKeyZone, useZoneKeyboard } from "@/shared/hooks/useKeyZone";
 
 const navItems = [
-  { label: "~/HOME", to: "/", activePaths: ["/"] },
-  { label: "~/LEARN", to: "/learn", activePaths: ["/learn", "/lessons", "/categories"] },
+  { label: "Home", to: "/", activePaths: ["/"] },
+  { label: "Learn", to: "/learn", activePaths: ["/learn", "/lessons", "/categories"] },
 ] as const;
+
+function useTheme() {
+  const [isDark, setIsDark] = useState(() =>
+    typeof document !== "undefined"
+      ? document.documentElement.classList.contains("dark")
+      : true,
+  );
+
+  const toggle = useCallback(() => {
+    const next = !isDark;
+    setIsDark(next);
+    document.documentElement.classList.toggle("dark", next);
+    try {
+      localStorage.setItem("theme", next ? "dark" : "light");
+    } catch {
+      // localStorage unavailable
+    }
+  }, [isDark]);
+
+  return { isDark, toggle };
+}
 
 export function Sidebar({
   isOpen,
@@ -19,6 +40,7 @@ export function Sidebar({
   const currentPath = matches[matches.length - 1]?.pathname ?? "/";
   const { activeZone, setActiveZone } = useKeyZone();
   const isFocused = activeZone === "sidebar";
+  const { isDark, toggle: toggleTheme } = useTheme();
 
   // Find the currently active nav item index based on route
   const activeIndex = useMemo(() => {
@@ -67,7 +89,7 @@ export function Sidebar({
       {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-abyss/80 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
           onClick={onClose}
         />
       )}
@@ -75,18 +97,18 @@ export function Sidebar({
       {/* Sidebar */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 flex w-56 flex-col border-r bg-carbon transition-transform duration-200 ease-in-out
+          fixed inset-y-0 left-0 z-50 flex w-56 flex-col border-r bg-surface transition-transform duration-200 ease-in-out
           lg:static lg:translate-x-0
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
-          ${isFocused ? "border-emerald-signal/30" : "border-charcoal"}
+          ${isFocused ? "border-brand/30" : "border-subtle"}
         `}
       >
         {/* Header */}
         <div className="shrink-0 px-5 pt-6 pb-8">
-          <Link to="/" onClick={onClose} className="cursor-pointer font-mono text-sm font-bold text-emerald-signal tracking-wider hover:text-volt-mint transition-colors">
+          <Link to="/" onClick={onClose} className="cursor-pointer text-lg font-display font-semibold text-brand hover:text-brand-hover transition-colors">
             ./learn
           </Link>
-          <p className="font-mono text-[10px] text-slate-steel mt-0.5">
+          <p className="text-[11px] text-muted mt-0.5">
             beta
           </p>
         </div>
@@ -104,12 +126,12 @@ export function Sidebar({
                 key={item.label}
                 to={item.to}
                 onClick={onClose}
-                className={`flex items-center gap-3 rounded-md px-3 py-2.5 font-mono text-xs transition-colors ${
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   isSelected
-                    ? "bg-emerald-signal/15 text-emerald-signal border border-emerald-signal/40"
+                    ? "bg-brand-bg text-brand border border-brand/30"
                     : isActive
-                      ? "bg-emerald-signal/10 text-emerald-signal border border-emerald-signal/20"
-                      : "text-slate-steel hover:bg-charcoal/30 hover:text-snow border border-transparent"
+                      ? "bg-brand-bg text-brand border border-brand/15"
+                      : "text-primary hover:bg-surface-hover hover:text-brand border border-transparent"
                 }`}
               >
                 <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -127,7 +149,7 @@ export function Sidebar({
             href="https://www.linkedin.com/in/pmartin-dev/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-slate-steel/50 hover:text-emerald-signal transition-colors"
+            className="text-muted/50 hover:text-brand transition-colors"
             aria-label="LinkedIn"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -138,13 +160,32 @@ export function Sidebar({
             href="https://github.com/pmartin-dev/dotslashlearn"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-slate-steel/50 hover:text-emerald-signal transition-colors"
+            className="text-muted/50 hover:text-brand transition-colors"
             aria-label="GitHub"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
             </svg>
           </a>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="cursor-pointer text-muted/50 hover:text-brand transition-colors"
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDark ? (
+              /* Sun icon — shown in dark mode */
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="12" r="5" />
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+              </svg>
+            ) : (
+              /* Moon icon — shown in light mode */
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+              </svg>
+            )}
+          </button>
         </div>
       </aside>
     </>
@@ -157,7 +198,7 @@ export function SidebarToggle({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="lg:hidden p-1 text-slate-steel hover:text-snow transition-colors"
+      className="lg:hidden p-1 text-muted hover:text-primary transition-colors"
       aria-label="Toggle menu"
     >
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

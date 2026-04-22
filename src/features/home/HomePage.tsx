@@ -21,7 +21,6 @@ export function HomePage({ lessons }: { lessons: LessonMeta[] }) {
     () => [
       {
         tag: "BROWSE",
-        tagColor: "text-emerald-signal",
         title: "Browse All Lessons",
         subtitle: `${nonDraft.length} lesson${nonDraft.length !== 1 ? "s" : ""} available`,
         to: "/learn",
@@ -33,7 +32,6 @@ export function HomePage({ lessons }: { lessons: LessonMeta[] }) {
       },
       {
         tag: "LATEST",
-        tagColor: "text-volt-mint",
         title: latest?.title ?? "No lessons yet",
         subtitle: latest ? "Newest addition" : "",
         to: latest ? `/lessons/${latest.slug}` : "/learn",
@@ -46,7 +44,6 @@ export function HomePage({ lessons }: { lessons: LessonMeta[] }) {
       },
       {
         tag: "RANDOM",
-        tagColor: "text-traffic-yellow",
         title: random?.title ?? "No lessons yet",
         subtitle: random ? "Feeling lucky? Jump in." : "",
         to: random ? `/lessons/${random.slug}` : "/learn",
@@ -91,19 +88,15 @@ export function HomePage({ lessons }: { lessons: LessonMeta[] }) {
     <div className="flex h-full flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto flex flex-col items-center justify-center px-6 pb-6">
         {/* Large branding */}
-        <h1 className="font-mono text-6xl sm:text-8xl lg:text-9xl font-bold text-emerald-signal tracking-tight select-none">
-          <span className="text-emerald-signal/60">.</span>/
-          <span className="font-light">learn</span>
+        <h1 className="font-display text-6xl sm:text-8xl lg:text-9xl font-bold tracking-tight select-none">
+          <span className="text-brand">.</span>
+          <span className="text-brand">/</span>
+          <span className="font-light text-primary">learn</span>
         </h1>
 
-        {/* Prompt */}
-        <div className="mt-8 font-mono text-2xl sm:text-3xl text-emerald-signal/80">
-          $ <span className="cursor-blink">_</span>
-        </div>
-
         {/* Tagline */}
-        <p className="mt-6 font-mono text-xs sm:text-sm text-slate-steel tracking-widest text-center">
-          INTERACTIVE LESSONS FOR DEVELOPERS. KEYBOARD-DRIVEN.
+        <p className="mt-8 text-lg sm:text-xl text-secondary text-center max-w-md">
+          Interactive lessons for developers. Keyboard-driven.
         </p>
 
         {/* Feature cards */}
@@ -114,22 +107,22 @@ export function HomePage({ lessons }: { lessons: LessonMeta[] }) {
               ref={(el) => { cardRefs.current[i] = el; }}
               to={card.to}
               onFocus={() => setFocused(i)}
-              className={`group rounded-lg border p-5 transition-colors outline-none ${
+              className={`group rounded-2xl border p-5 transition-all outline-none shadow-card ${
                 focused === i
-                  ? "border-emerald-signal/40 bg-charcoal/20"
-                  : "border-charcoal bg-carbon/80 hover:border-emerald-signal/30 hover:bg-charcoal/20"
+                  ? "border-brand/30 bg-brand-bg shadow-brand"
+                  : "border-subtle bg-surface hover:border-brand/20 hover:shadow-card-hover"
               }`}
             >
               <div className="flex items-center gap-2 mb-3">
-                <span className={card.tagColor}>{card.icon}</span>
-                <span className={`font-mono text-xs ${card.tagColor}`}>
+                <span className="text-brand">{card.icon}</span>
+                <span className="text-xs font-semibold text-brand uppercase tracking-wide">
                   {card.tag}
                 </span>
               </div>
-              <h3 className="font-mono text-sm font-semibold text-snow leading-snug">
+              <h3 className="text-sm font-semibold text-primary leading-snug">
                 {card.title}
               </h3>
-              <p className="mt-1 font-mono text-xs text-slate-steel">
+              <p className="mt-1 text-xs text-muted">
                 {card.subtitle}
               </p>
             </Link>
@@ -138,17 +131,17 @@ export function HomePage({ lessons }: { lessons: LessonMeta[] }) {
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 border-t border-charcoal/50 bg-carbon">
-        <div className="flex items-center justify-center px-6 py-3 font-mono text-xs text-slate-steel">
+      <div className="shrink-0 border-t border-subtle bg-surface-dim">
+        <div className="flex items-center justify-center px-6 py-3 text-xs text-muted">
           <span className="hidden sm:flex items-center gap-3">
             <span>
-              <kbd className="rounded border border-charcoal bg-abyss px-1.5 py-0.5">←→</kbd> select
+              <kbd className="rounded-md border border-subtle bg-surface px-1.5 py-0.5 text-[11px] font-mono">←→</kbd> select
             </span>
             <span>
-              <kbd className="rounded border border-charcoal bg-abyss px-1.5 py-0.5">enter</kbd> open
+              <kbd className="rounded-md border border-subtle bg-surface px-1.5 py-0.5 text-[11px] font-mono">enter</kbd> open
             </span>
             <span>
-              <kbd className="rounded border border-charcoal bg-abyss px-1.5 py-0.5">tab</kbd> sidebar
+              <kbd className="rounded-md border border-subtle bg-surface px-1.5 py-0.5 text-[11px] font-mono">tab</kbd> sidebar
             </span>
           </span>
         </div>

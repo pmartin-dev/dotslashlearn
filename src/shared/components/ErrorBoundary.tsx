@@ -29,12 +29,12 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         this.props.fallback ?? (
           <div className="mx-auto max-w-3xl px-6 py-16 text-center">
-            <p className="font-mono text-sm text-slate-steel">
+            <p className="text-sm text-muted">
               Something went wrong rendering this content.
             </p>
             <button
               onClick={() => this.setState({ hasError: false })}
-              className="mt-4 font-mono text-xs text-emerald-signal hover:text-volt-mint transition-colors"
+              className="mt-4 text-xs text-brand hover:text-brand-hover transition-colors font-medium"
             >
               try again
             </button>

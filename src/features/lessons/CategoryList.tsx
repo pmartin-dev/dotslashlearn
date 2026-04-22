@@ -83,35 +83,35 @@ function CategoryRow({
     <Link
       to="/categories/$slug"
       params={{ slug: category.slug }}
-      className={`group block rounded px-3 py-2 font-mono text-sm transition-colors ${
+      className={`group block rounded-lg px-3 py-2 text-sm transition-colors ${
         isSelected
-          ? "bg-emerald-signal/10 text-emerald-signal"
-          : "text-parchment hover:text-snow"
+          ? "bg-brand-bg text-brand"
+          : "text-secondary hover:text-primary hover:bg-surface-hover"
       }`}
     >
       {/* Desktop */}
       <div className="hidden sm:grid grid-cols-[1rem_12rem_1.5rem_1fr_auto] items-baseline gap-x-2">
         <span
-          className={isSelected ? "text-emerald-signal" : "text-charcoal"}
+          className={isSelected ? "text-brand" : "text-subtle"}
         >
-          {isSelected ? ">" : " "}
+          {isSelected ? "›" : " "}
         </span>
         <span
-          className={`truncate ${isSelected ? "text-emerald-signal" : "text-snow"}`}
+          className={`truncate font-medium ${isSelected ? "text-brand" : "text-primary"}`}
         >
           {category.name}
         </span>
-        <span className="text-charcoal">--</span>
-        <span className="text-xs text-slate-steel truncate">
+        <span className="text-subtle">—</span>
+        <span className="text-xs text-muted truncate">
           {category.lessonTitles.join(", ")}
         </span>
         <span className="text-xs whitespace-nowrap pl-2">
           {hasProgress ? (
-            <span className={allDone ? "text-emerald-signal" : "text-slate-steel"}>
+            <span className={allDone ? "text-brand font-medium" : "text-muted"}>
               {completedCount}/{category.lessonCount}
             </span>
           ) : (
-            <span className="text-charcoal">
+            <span className="text-muted">
               {category.lessonCount} lesson{category.lessonCount !== 1 && "s"}
             </span>
           )}
@@ -121,26 +121,26 @@ function CategoryRow({
       <div className="sm:hidden">
         <div className="flex items-center gap-2">
           <span
-            className={`w-4 shrink-0 ${isSelected ? "text-emerald-signal" : "text-charcoal"}`}
+            className={`w-4 shrink-0 ${isSelected ? "text-brand" : "text-subtle"}`}
           >
-            {isSelected ? ">" : " "}
+            {isSelected ? "›" : " "}
           </span>
-          <span className={isSelected ? "text-emerald-signal" : "text-snow"}>
+          <span className={`font-medium ${isSelected ? "text-brand" : "text-primary"}`}>
             {category.name}
           </span>
           <span className="ml-auto text-xs shrink-0">
             {hasProgress ? (
-              <span className={allDone ? "text-emerald-signal" : "text-slate-steel"}>
+              <span className={allDone ? "text-brand font-medium" : "text-muted"}>
                 {completedCount}/{category.lessonCount}
               </span>
             ) : (
-              <span className="text-charcoal">
+              <span className="text-muted">
                 {category.lessonCount} lesson{category.lessonCount !== 1 && "s"}
               </span>
             )}
           </span>
         </div>
-        <div className="ml-6 mt-1 text-xs text-slate-steel truncate">
+        <div className="ml-6 mt-1 text-xs text-muted truncate">
           {category.lessonTitles.join(", ")}
         </div>
       </div>

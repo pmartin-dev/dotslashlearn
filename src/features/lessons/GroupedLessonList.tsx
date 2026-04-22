@@ -105,18 +105,18 @@ export function GroupedLessonList({ lessons }: { lessons: LessonMeta[] }) {
         return (
           <div key={cat.slug}>
             {/* Category header */}
-            <div className="flex items-baseline justify-between px-3 pb-2 font-mono text-xs">
+            <div className="flex items-baseline justify-between px-3 pb-2 text-xs">
               <Link
                 to="/categories/$slug"
                 params={{ slug: cat.slug }}
-                className="text-slate-steel hover:text-emerald-signal transition-colors"
+                className="text-muted font-medium hover:text-brand transition-colors"
               >
-                <span className="text-charcoal">##</span> {cat.name}
+                {cat.name}
               </Link>
               {hasProgress && (
                 <span
                   className={
-                    allDone ? "text-emerald-signal" : "text-slate-steel"
+                    allDone ? "text-brand font-medium" : "text-muted"
                   }
                 >
                   {completedCount}/{cat.lessons.length}

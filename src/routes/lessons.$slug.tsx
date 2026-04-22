@@ -25,8 +25,8 @@ export const Route = createFileRoute("/lessons/$slug")({
   },
   pendingComponent: () => (
     <div className="flex h-full items-center justify-center">
-      <span className="font-mono text-sm text-slate-steel animate-pulse">
-        loading lesson...
+      <span className="text-sm text-muted animate-pulse">
+        Loading lesson...
       </span>
     </div>
   ),
