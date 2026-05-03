@@ -15,7 +15,7 @@ import { KeyZoneContext, type Zone } from "@/shared/hooks/useKeyZone";
  * Inline script to apply the saved theme before first paint (prevents flash).
  * This is a static constant — not user-provided content — so it's safe to inject.
  */
-const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='light'){document.documentElement.classList.remove('dark')}else{document.documentElement.classList.add('dark')}}catch(e){document.documentElement.classList.add('dark')}})()`;
+const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){document.documentElement.classList.remove('dark')}})()`;
 
 export const Route = createRootRoute({
   notFoundComponent: () => <NotFound />,
@@ -23,7 +23,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "theme-color", content: "#0c0c0e" },
+      { name: "theme-color", content: "#ffffff" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -59,7 +59,7 @@ function RootComponent() {
 }
 
 function getInitialDark(): boolean {
-  if (typeof document === "undefined") return true; // SSR default: dark
+  if (typeof document === "undefined") return false; // SSR default: light
   return document.documentElement.classList.contains("dark");
 }
 

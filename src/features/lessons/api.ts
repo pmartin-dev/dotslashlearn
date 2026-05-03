@@ -1,10 +1,19 @@
-import fs from "fs";
-import path from "path";
 import matter from "gray-matter";
 import { frontmatterSchema, isValidSlug, toSlug } from "./schema";
 import type { CategoryDetail, CategoryMeta, Lesson, LessonMeta } from "./schema";
 
-const LESSONS_DIR = path.join(process.cwd(), "content/lessons");
+const lessonFiles = import.meta.glob("/content/lessons/*.mdx", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+const lessonsBySlug: Record<string, string> = Object.fromEntries(
+  Object.entries(lessonFiles).map(([filePath, raw]) => {
+    const slug = filePath.split("/").pop()!.replace(/\.mdx$/, "");
+    return [slug, raw];
+  }),
+);
 
 function splitSteps(content: string): string[] {
   return content
@@ -19,12 +28,11 @@ function countQuizzes(content: string): number {
 }
 
 function parseLessonMeta(slug: string): LessonMeta | null {
-  const filePath = path.join(LESSONS_DIR, `${slug}.mdx`);
+  const raw = lessonsBySlug[slug];
+  if (!raw) return null;
   try {
-    const raw = fs.readFileSync(filePath, "utf-8");
     const { data, content } = matter(raw);
     const parsed = frontmatterSchema.parse(data);
-    // Use splitSteps for consistency with parseLessonFull
     const stepCount = splitSteps(content).length;
     const quizCount = countQuizzes(content);
 
@@ -36,9 +44,9 @@ function parseLessonMeta(slug: string): LessonMeta | null {
 }
 
 function parseLessonFull(slug: string): Lesson | null {
-  const filePath = path.join(LESSONS_DIR, `${slug}.mdx`);
+  const raw = lessonsBySlug[slug];
+  if (!raw) return null;
   try {
-    const raw = fs.readFileSync(filePath, "utf-8");
     const { data, content } = matter(raw);
     const parsed = frontmatterSchema.parse(data);
     const steps = splitSteps(content);
@@ -52,26 +60,15 @@ function parseLessonFull(slug: string): Lesson | null {
 }
 
 export function getAllLessons(): LessonMeta[] {
-  try {
-    const files = fs
-      .readdirSync(LESSONS_DIR)
-      .filter((f) => f.endsWith(".mdx"));
-
-    return files
-      .map((f) => parseLessonMeta(f.replace(/\.mdx$/, "")))
-      .filter((meta): meta is LessonMeta => meta !== null)
-      .sort((a, b) => a.order - b.order);
-  } catch (err) {
-    console.error("Failed to read lessons directory:", err);
-    return [];
-  }
+  return Object.keys(lessonsBySlug)
+    .map((slug) => parseLessonMeta(slug))
+    .filter((meta): meta is LessonMeta => meta !== null)
+    .sort((a, b) => a.order - b.order);
 }
 
 export function getLesson(slug: string): Lesson | null {
   if (!isValidSlug(slug)) return null;
-
-  const filePath = path.join(LESSONS_DIR, `${slug}.mdx`);
-  if (!fs.existsSync(filePath)) return null;
+  if (!lessonsBySlug[slug]) return null;
 
   const lesson = parseLessonFull(slug);
   if (!lesson || lesson.draft) return null;
