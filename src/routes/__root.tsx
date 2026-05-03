@@ -6,6 +6,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { Analytics } from "@vercel/analytics/react";
 import appCss from "@/shared/styles/app.css?url";
 import { NotFound } from "@/shared/components/NotFound";
 import { Sidebar, SidebarToggle } from "@/shared/components/Sidebar";
@@ -117,6 +118,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
             </div>
           </div>
         </KeyZoneContext>
+        <Analytics />
         <Scripts />
       </body>
     </html>
