@@ -1,0 +1,398 @@
+---
+title: "API Design Patterns"
+description: "Versioning, pagination, idempotency, errors — the design choices you pay for years later"
+order: 1
+category: "API Design"
+---
+
+Designing an API is easy. Designing one that survives **five years of consumers, growth, and team turnover** is hard.
+
+Most APIs don't fail because of bad endpoints. They fail because of small early decisions -- a pagination shortcut, a non-idempotent `POST`, an error format that nobody can parse -- that compound into integration nightmares.
+
+This lesson covers the patterns senior engineers reach for, and the traps they avoid.
+
+---
+
+## Resource Design: Nouns, Not Verbs
+
+The foundation: URLs name **resources**, HTTP methods express **intent**.
+
+```
+✗ POST /getUser
+✗ POST /deleteUserById
+
+✓ GET    /users/42
+✓ DELETE /users/42
+```
+
+The standard mapping:
+
+- `GET    /products`     -- list
+- `GET    /products/42`  -- read one
+- `POST   /products`     -- create
+- `PUT    /products/42`  -- replace
+- `PATCH  /products/42`  -- partial update
+- `DELETE /products/42`  -- delete
+
+Keep URLs **shallow**. `/products/42/reviews` is fine; `/users/7/orders/3/items/5/reviews` is a smell. Past two levels, expose a flat resource with a filter.
+
+---
+
+## REST's Six Architectural Constraints
+
+Roy Fielding's 2000 dissertation defined REST as a set of **six constraints**, not a recipe. Worth knowing because every design decision either honors or breaks one of them.
+
+1. **Client-server** -- separation of concerns. Clients evolve independently from servers.
+2. **Stateless** -- every request carries everything needed to process it. No server-side session.
+3. **Cacheable** -- responses self-declare whether they can be reused.
+4. **Uniform interface** -- one shared protocol (HTTP methods, URIs, representations) across all resources.
+5. **Layered system** -- the client doesn't know if it's talking to the origin, a proxy, or a CDN.
+6. **Code on demand** -- servers can ship executable code to clients. *Optional*. Almost nobody does this.
+
+---
+
+The senior take: **stateless** and **cacheable** are the two that pay rent. Stateless is what lets you scale horizontally without sticky sessions. Cacheable is what lets a CDN absorb 95% of your read traffic.
+
+The others are mostly hygiene -- if you violate them you'll feel it (custom protocols are unmaintainable, deeply coupled clients break on every change), but you won't think about them daily.
+
+If your "REST" API requires a session affinity cookie to work, **it isn't REST**. It might still be a fine product -- but be honest about the trade-off you made.
+
+---
+
+## Versioning: Pick One, Live With It
+
+There is no perfect versioning strategy, only trade-offs you'll learn to hate. Pick deliberately.
+
+**1. URL path versioning** -- `GET /v1/users`
+
+Used by GitHub, Twilio, Stripe. Visible in logs, easy to debug, cache-friendly. Slightly ugly, but most teams converge here.
+
+**2. Header versioning** -- `Api-Version: 2024-01-15`
+
+Cleaner URLs. Harder to test from a browser. Easy to forget the header.
+
+**3. Content negotiation** -- `Accept: application/vnd.example.v1+json`
+
+REST-purist. Maximally annoying for consumers.
+
+---
+
+The pragmatic default for a public API: **URL path versioning with date-stamped versions** (`/v2024-05-01/...`), à la Stripe. It keeps version semantics explicit and gives you room to ship breaking changes without bumping a major.
+
+Whichever you pick, **plan deprecation from day one**: a `Sunset` header, a deprecation timeline, and a written policy. Versions you can't kill become permanent liabilities.
+
+---
+
+## Pagination: Where Seniors Trip
+
+Two strategies, only one of them safe under load.
+
+### Offset-based
+
+```
+GET /products?offset=20&limit=10
+```
+
+Easy to understand. Easy to jump to page 47. **Broken under concurrent writes**: if a record is inserted between page 1 and page 2, the consumer either sees an item twice or misses one entirely.
+
+Performance also degrades linearly with depth -- the database has to count and skip every prior row.
+
+---
+
+### Cursor-based
+
+```
+GET /products?cursor=dXNlcjpXMDdRQ1JQQTQ&limit=10
+```
+
+The cursor is an **opaque token** pointing at "where you left off" -- usually an encoded `(sort_key, id)` tuple. Stable under concurrent writes. Constant time at any depth.
+
+Trade-off: no jumping to arbitrary pages, only forward/back traversal.
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "hasMore": true,
+    "nextCursor": "dXNlcjpXMDdRQ1JQQTQ=",
+    "prevCursor": "dXNlcjpXMDdRQ0xPVTM="
+  }
+}
+```
+
+**Default to cursors** for any list that grows or changes. Use offsets only for small, stable, admin-style lists.
+
+---
+
+```quiz
+You expose `GET /transactions?offset=N&limit=20`. Users complain that some transactions appear twice in the UI when scrolling. What's the most likely cause?
+- [ ] The database is returning duplicate rows
+- [ ] The client is double-rendering items
+- [x] New transactions inserted between page fetches shift the offset window
+- [ ] The cursor was reused from a previous session
+explanation: Offset pagination is unstable under writes. If a new transaction is inserted at position 0 between fetching page 1 and page 2, the row that was last on page 1 is now first on page 2 -- a duplicate. Cursor pagination avoids this by anchoring to a record, not a position.
+```
+
+---
+
+## Idempotency: The POST Trap
+
+`GET`, `PUT`, `DELETE` are idempotent by definition: replaying them is safe. `POST` is not. And `POST` is exactly where idempotency matters most: **payments, orders, signups**.
+
+The scenario: client sends `POST /charges`, the network drops the response, the client retries. Without idempotency, the user is charged twice.
+
+---
+
+The pattern, popularized by Stripe and now standard:
+
+```
+POST /charges
+Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000
+
+{ "amount": 1000, "currency": "usd" }
+```
+
+The server:
+
+1. On first request: process, store the response keyed by the idempotency key
+2. On retry with same key: return the **cached response**, don't reprocess
+
+Keys are client-generated UUIDs, scoped to the endpoint and account, with a TTL (Stripe uses 24h). Any state-changing `POST` that a client could reasonably retry should accept one.
+
+Skip this and you'll write the bug-fix later, under pressure, in production.
+
+---
+
+## Error Handling: Stop Inventing Formats
+
+Every team eventually invents a JSON error shape. They are all subtly different, and none of them survive contact with a third client. Use the **standard** instead.
+
+**RFC 9457 Problem Details** (supersedes RFC 7807):
+
+```json
+{
+  "type": "https://api.example.com/errors/validation-error",
+  "title": "Validation Error",
+  "status": 400,
+  "detail": "The email field is not in a valid format.",
+  "instance": "/api/users/signup",
+  "errors": [
+    { "field": "email", "message": "Must be a valid email address" }
+  ],
+  "trace": { "requestId": "f7a8b99c-...", "timestamp": "2025-05-30T14:22:00Z" }
+}
+```
+
+---
+
+The five standard fields:
+
+- `type` -- a URI identifying the error class (link to your docs)
+- `title` -- human-readable summary, stable across instances
+- `status` -- HTTP status code (mirrored for clients that lose it)
+- `detail` -- specific to this occurrence
+- `instance` -- URI of the specific failure
+
+You can extend with custom fields (`errors`, `trace`, etc.). The `Content-Type` should be `application/problem+json`.
+
+The benefit isn't aesthetic -- it's that **every consumer already has a parser**. SDKs, gateways, monitoring tools. Inventing your own format means writing all of those yourself.
+
+---
+
+## Rate Limiting: Three Algorithms, One Set of Headers
+
+Three algorithms, ranked by sophistication:
+
+- **Fixed window** -- 100 req/min, reset on the minute. Simple. Allows a 200-req burst at the boundary.
+- **Sliding window** -- rolling 60s count. Smoother. More memory.
+- **Token bucket** -- tokens refill at a fixed rate; each request consumes one. Allows controlled bursts. The choice of AWS, Cloudflare, and most serious gateways.
+
+---
+
+The protocol-level part is what consumers actually care about. Always return:
+
+```
+X-RateLimit-Limit:     100
+X-RateLimit-Remaining: 75
+X-RateLimit-Reset:     1621872000
+```
+
+When the limit is hit:
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 30
+```
+
+`Retry-After` is the difference between a client that backs off cleanly and one that hammers you into the ground. Don't omit it.
+
+---
+
+## Caching: HTTP Already Has the Answers
+
+You don't need to invent a caching layer. HTTP has 25 years of one.
+
+**Tell clients how long a response is fresh:**
+
+```
+Cache-Control: max-age=3600, public
+```
+
+**Give them an identity to compare against:**
+
+```
+ETag: "33a64df551425fcc55e4d42a148795d9f25f89d4"
+Last-Modified: Wed, 21 May 2025 13:28:00 GMT
+```
+
+---
+
+**Let them validate without re-downloading:**
+
+The client sends `If-None-Match: "<etag>"` on the next request. If unchanged, you reply:
+
+```
+HTTP/1.1 304 Not Modified
+```
+
+Zero body bytes. The client uses its cached copy.
+
+Layer this with a CDN at the edge and Redis on the server, and you get three cache tiers -- client, edge, server -- with one set of headers driving all of them.
+
+---
+
+## Auth: Match the Method to the Threat
+
+A short tour, in increasing strength:
+
+- **API keys** -- one shared secret per client. Fine for server-to-server, weak for anything user-facing. Treat like passwords (rotate, scope, never log).
+- **OAuth 2.0** -- delegated access. The right answer when a user is granting your app access to their data on a third-party service.
+- **JWT** -- self-contained, signed token carrying claims. Stateless verification, but **revocation is hard** -- plan for short TTLs and a refresh flow.
+- **Mutual TLS** -- both sides present certificates. Highest assurance, used between trusted services in regulated environments.
+
+---
+
+Authorization is a separate question: **who can do what** once authenticated.
+
+- **RBAC** -- roles map to permissions (`admin`, `editor`, `viewer`). Simple, scales to hundreds of users.
+- **ABAC** -- decisions based on attributes (user, resource, context). More flexible, more code, more bugs.
+
+Default to RBAC. Move to ABAC only when you actually have rules RBAC can't express -- not before.
+
+---
+
+```quiz
+A client retries a `POST /payments` request after a network timeout. Without an idempotency mechanism, what is the worst-case outcome?
+- [ ] The retry returns 409 Conflict
+- [x] The user is charged twice
+- [ ] The server rejects the retry as a duplicate automatically
+- [ ] The original request is rolled back
+explanation: HTTP gives no automatic deduplication for POST. If the first request succeeded but the response was lost, the retry creates a second charge. An `Idempotency-Key` lets the server recognize the retry and return the original response.
+```
+
+---
+
+## API-First: Design the Contract Before Coding
+
+The shift that separates mature API teams from the rest: **the API spec is the source of truth**, written before any implementation.
+
+Concretely, you write an OpenAPI document first:
+
+```yaml
+paths:
+  /products/{id}:
+    get:
+      summary: Get a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          $ref: '#/components/responses/NotFound'
+```
+
+---
+
+What this buys you, in roughly the order you'll feel the wins:
+
+- **Parallel work** -- frontend and backend agree on the contract on day one. Frontend mocks against the spec while backend implements.
+- **Generated SDKs** -- run a codegen tool (`openapi-generator`, `orval`, `kiota`) and ship typed clients in 10 languages from one source.
+- **Generated types** -- on the server, validate request/response payloads against the schema. On the client, get autocompletion that can't drift from reality.
+- **Living documentation** -- Swagger UI, Redoc, Stoplight render the spec interactively. No more wiki that's six months stale.
+- **Contract testing** -- tools like Schemathesis or Dredd hammer your implementation against the spec and find divergences automatically.
+
+---
+
+The discipline that makes this work: **the spec is reviewed and merged separately from the implementation**, often in a `api/` directory or a dedicated repo. PRs that change endpoint shape are reviewed for breaking-change implications before any code is written.
+
+If you've ever shipped an endpoint, then spent two days writing a Notion doc about it, then watched it drift from the truth -- API-First is what kills that loop.
+
+The ecosystem standard is **OpenAPI 3.1** (which aligns with JSON Schema). Use it.
+
+---
+
+## HATEOAS: The Pattern Most Teams Skip
+
+The idea: every response embeds links to related actions, so clients **discover** the API at runtime instead of hardcoding URLs.
+
+```json
+{
+  "departmentId": 10,
+  "name": "Engineering",
+  "links": [
+    { "rel": "self",      "href": "/departments/10" },
+    { "rel": "employees", "href": "/departments/10/employees" },
+    { "rel": "update",    "href": "/departments/10", "method": "PUT" }
+  ]
+}
+```
+
+GitHub's REST API does this. So does PayPal's. It's elegant.
+
+---
+
+The honest senior take: **most teams don't do this, and ship fine.**
+
+HATEOAS pays off when you have many heterogeneous clients, a long lifetime, and capacity to maintain the link discipline. For a typical product API serving one or two known consumers, it's overhead that buys nothing.
+
+Know the pattern exists. Use it when the cost of breaking client-server coupling exceeds the cost of generating links. Otherwise, ship without it.
+
+---
+
+## Recap
+
+The patterns that matter most to internalize, in order of "how often they bite people":
+
+1. **Cursor pagination** by default -- offsets break under writes
+2. **Idempotency keys** on any retryable `POST`
+3. **RFC 9457 errors** -- don't invent your own format
+4. **API-First with OpenAPI** -- spec before code, generated clients, contract tests
+5. **Stateless requests** -- no session affinity, scale horizontally
+6. **URL path versioning** with a real deprecation policy
+7. **Standard rate-limit headers** with `Retry-After`
+8. **HTTP caching** with `Cache-Control` + `ETag`
+
+---
+
+The meta-lesson: **APIs are interfaces, and interfaces are forever.**
+
+The cost of changing a path, a status code, an error shape after consumers exist is enormous. Spend the time up front. Steal patterns from APIs that have been in production for a decade -- Stripe, GitHub, AWS -- because the shape of those APIs is the shape of decisions you'd make yourself, after enough years and enough outages.
+
+---
+
+```quiz
+You're designing a public REST API and need to return validation errors. What format should you choose?
+- [ ] Invent a JSON shape that fits your app's domain
+- [ ] Return errors as plain-text strings in the response body
+- [x] Use RFC 9457 Problem Details (`application/problem+json`)
+- [ ] Encode the error in a custom HTTP header
+explanation: RFC 9457 (formerly 7807) is the standard machine-readable error format. Existing client libraries, gateways, and monitoring tools already understand it. Custom formats force every consumer to write a parser and don't compose with the wider ecosystem.
+```
