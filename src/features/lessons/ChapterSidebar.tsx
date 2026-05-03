@@ -51,7 +51,6 @@ export function ChapterSidebar({
 
         <div className="flex-1 overflow-y-auto p-2">
           {chapters.map((chapter, i) => {
-            const stepCount = chapter.endStep - chapter.startStep + 1;
             const isActive = i === currentChapterIdx;
             const isCompleted = highestStep > chapter.endStep;
             const isAccessible = highestStep >= chapter.startStep;
@@ -62,7 +61,7 @@ export function ChapterSidebar({
                 disabled={!isAccessible}
                 aria-current={isActive ? "step" : undefined}
                 onClick={() => isAccessible && onNavigate(chapter.startStep)}
-                className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                className={`w-full text-left flex items-center px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   isActive
                     ? "bg-brand/10 text-brand"
                     : isAccessible
@@ -75,9 +74,6 @@ export function ChapterSidebar({
                     {isCompleted ? "✓" : isActive ? "▶" : "·"}
                   </span>
                   <span className="truncate">{chapter.title}</span>
-                </span>
-                <span className="text-xs font-mono text-muted shrink-0 ml-3">
-                  {stepCount}
                 </span>
               </button>
             );

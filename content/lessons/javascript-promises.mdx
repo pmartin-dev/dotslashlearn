@@ -1,0 +1,222 @@
+---
+title: "Promises: Behind the Scenes"
+description: "Demystify Promise internals: reaction records, microtasks, and chaining"
+order: 2
+category: "JavaScript"
+---
+
+Promises in JavaScript have a reputation: **daunting**, **confusing**, sometimes infuriating.
+
+But once you see what happens **under the hood**, they stop being magic. There's no clever runtime trick -- just a small object with a handful of internal slots and a queue.
+
+Let's walk through it.
+
+---
+
+## The Promise Object
+
+When you call `new Promise(executor)`, the engine creates a Promise object in memory. This object has a few **internal slots**:
+
+- `[[PromiseState]]` -- `pending`, `fulfilled`, or `rejected`
+- `[[PromiseResult]]` -- the resolved value or rejection reason
+- `[[PromiseFulfillReactions]]` -- callbacks to run on success
+- `[[PromiseRejectReactions]]` -- callbacks to run on failure
+- `[[PromiseIsHandled]]` -- whether `.then`/`.catch` was attached
+
+The constructor immediately calls the **executor function** you pass it, handing it two functions: `resolve` and `reject`.
+
+---
+
+```js
+const p = new Promise((resolve, reject) => {
+  resolve("done");
+});
+```
+
+When `resolve("done")` runs, the engine performs three updates:
+
+1. `[[PromiseState]]` → `"fulfilled"`
+2. `[[PromiseResult]]` → `"done"`
+3. Schedule any registered fulfill reactions (we'll get there)
+
+`reject("fail")` is symmetric: state becomes `"rejected"`, result is `"fail"`.
+
+So far, this is just a function mutating object properties. **Nothing async**.
+
+---
+
+## Promise Reaction Records
+
+The interesting part lives in those `[[PromiseFulfillReactions]]` and `[[PromiseRejectReactions]]` slots. They hold **Promise Reaction Records**.
+
+A reaction record is created every time you call `.then()` or `.catch()` on a promise. Among other fields, it contains a **handler** -- the callback you passed in.
+
+```js
+const p = new Promise((resolve) => resolve("done"));
+
+p.then((result) => console.log(result));
+//   ↑
+//   Creates a reaction record:
+//   { handler: (result) => console.log(result), ... }
+```
+
+---
+
+## Connecting to the Event Loop
+
+Here's where it clicks. When `resolve` runs:
+
+1. State and result are updated synchronously
+2. Each reaction record's handler is **scheduled onto the microtask queue**
+3. The handler runs when the call stack is empty and microtasks are drained
+
+That's the whole async story. Promises don't have their own scheduling system -- they reuse the **microtask queue** we already saw with the event loop.
+
+> Quick refresher: when the call stack empties, the event loop drains **all** microtasks before pulling the next task from the task queue.
+
+---
+
+## A Realistic Example
+
+In real code, you don't `resolve` synchronously inside the constructor. You start an async operation -- a timer, a `fetch`, a file read -- and call `resolve` when it completes.
+
+```js
+const p = new Promise((resolve) => {
+  setTimeout(() => resolve("done"), 100);
+});
+
+p.then((result) => console.log(result));
+
+console.log("script end");
+```
+
+---
+
+Let's trace it step by step:
+
+1. `new Promise(...)` is pushed. The promise object is created (state: `pending`).
+2. The executor runs. Inside, `setTimeout` registers a 100ms timer with the browser, then is popped.
+3. `.then(...)` runs. A **reaction record** is created and pushed into `[[PromiseFulfillReactions]]` (the promise is still pending).
+4. `console.log("script end")` logs `"script end"`.
+5. ~100ms later, the timer callback enters the **task queue**.
+6. Call stack is empty → event loop moves it to the stack → it calls `resolve("done")`.
+
+---
+
+7. `resolve` updates state to `"fulfilled"`, result to `"done"`, and schedules every reaction record's handler onto the **microtask queue**.
+8. `resolve` is popped, then the timer callback.
+9. Stack is empty → event loop drains microtasks → the `.then` handler runs and logs `"done"`.
+
+The handler is non-blocking: between step 4 and step 9, the rest of your script (or other handlers) could keep running freely.
+
+---
+
+```quiz
+In the example above, when is the `.then` handler's reaction record created?
+- [ ] When the timer fires, after 100ms
+- [x] Synchronously, when `.then()` is called
+- [ ] When `resolve("done")` runs
+- [ ] When the microtask queue is drained
+explanation: The reaction record is created the moment `.then()` runs. It sits in `[[PromiseFulfillReactions]]` until `resolve` schedules its handler onto the microtask queue.
+```
+
+---
+
+## Chaining: `.then` Returns a Promise
+
+This is the second key insight: `.then()` does **two** things, not one.
+
+1. It creates a reaction record (as we saw)
+2. It **returns a new Promise object**
+
+Whatever the handler returns becomes the result of that new promise. That's why you can chain.
+
+---
+
+```js
+new Promise((resolve) => resolve(1))
+  .then((x) => x * 2)   // returns a promise fulfilled with 2
+  .then((x) => x * 2)   // returns a promise fulfilled with 4
+  .then((x) => console.log(x)); // logs 4
+```
+
+Each `.then` produces its own promise object, with its own state and result, with its own reaction records. The chain is a linked sequence of promises, each one resolving the next.
+
+In practice, this lets you describe a multi-step async pipeline -- fetch, parse, transform, render -- in a non-blocking, readable form.
+
+---
+
+## The Trick: Synchronous vs Microtask
+
+Here's where developers often trip. **Reaction handlers always run via the microtask queue**, even if the promise is already fulfilled when `.then` is called.
+
+```js
+new Promise((resolve) => {
+  console.log(1);
+  resolve(2);
+}).then((result) => console.log(result));
+
+console.log(3);
+```
+
+Take a moment. What does this log, and in what order?
+
+---
+
+The answer is `1`, `3`, `2`. Here's why:
+
+1. `new Promise(...)` runs the executor synchronously. `console.log(1)` logs `1`.
+2. `resolve(2)` updates state to `"fulfilled"`, result to `2`. No reactions are registered yet, so nothing is scheduled.
+3. `.then(...)` runs. The promise is **already fulfilled**, so its handler is scheduled directly to the **microtask queue**. It does **not** run inline.
+4. `console.log(3)` logs `3`.
+5. Script done, stack empty → drain microtasks → the handler runs and logs `2`.
+
+The mental model: **once you cross `.then`, you've entered async land**, no matter how synchronously the promise resolved.
+
+---
+
+## Why Microtasks, Not Inline Calls?
+
+You might wonder: if the promise is already fulfilled, why not call the handler immediately?
+
+Two reasons baked into the spec:
+
+- **Determinism.** Code that follows `.then` should always run before the handler. Without this, the order of operations would depend on whether `resolve` was sync or async -- a debugging nightmare.
+- **Stack safety.** Long synchronous chains would blow the call stack. Yielding to the microtask queue between handlers keeps the stack shallow.
+
+The result: Promises behave consistently, regardless of timing.
+
+---
+
+```quiz
+What is the output of this code?
+
+console.log("A");
+Promise.resolve().then(() => console.log("B"));
+console.log("C");
+- [ ] A, B, C
+- [ ] B, A, C
+- [x] A, C, B
+- [ ] C, A, B
+explanation: A and C are synchronous and run first. The `.then` handler is scheduled to the microtask queue and only runs once the call stack is empty -- after C.
+```
+
+---
+
+## Recap
+
+Promises aren't magic. They're three things working together:
+
+- A **plain object** with state, result, and lists of reaction records
+- A **scheduling rule**: when `resolve`/`reject` runs, registered reactions are pushed to the **microtask queue**
+- A **chaining mechanism**: `.then` returns a new promise, so each step in the chain is its own promise resolving the next
+
+---
+
+Once you see this, async code stops feeling mysterious. When something runs in an order you didn't expect, ask:
+
+1. What was on the **call stack** at that moment?
+2. What's in the **microtask queue**?
+3. Has every microtask drained before the next task runs?
+
+That's the whole model. Tracing through it beats guessing every time.
