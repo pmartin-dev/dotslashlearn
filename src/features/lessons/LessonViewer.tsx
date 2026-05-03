@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion, useReducedMotion } from "motion/react";
+import { rehypeShikiConfig } from "./shiki";
 import type { Lesson } from "./schema";
 import { progressStore } from "@/features/progress/store";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
@@ -15,41 +16,52 @@ import { ChapterSidebar } from "./ChapterSidebar";
 const SIDEBAR_STORAGE_KEY = "dotslashlearn_chapters_open";
 
 const markdownComponents = {
-  pre({ children }: { children?: React.ReactNode }) {
+  pre({ children, ...preProps }: HTMLAttributes<HTMLPreElement> & { children?: ReactNode }) {
     const child = Array.isArray(children) ? children[0] : children;
     if (
       child &&
       typeof child === "object" &&
       "type" in child &&
-      child.type === "code"
+      (child as { type: unknown }).type === "code"
     ) {
-      const { className, children: codeChildren } = child.props;
+      const codeProps = (child as { props: { className?: string; children?: ReactNode } }).props;
       return (
-        <CodeBlock className={className}>
-          {codeChildren}
-        </CodeBlock>
+        <CodeBlock
+          codeClassName={codeProps.className}
+          codeChildren={codeProps.children}
+          preProps={preProps}
+        />
       );
     }
-    return <pre>{children}</pre>;
+    return <pre {...preProps}>{children}</pre>;
   },
 };
 
-type LessonViewerProps = Pick<Lesson, "slug" | "title" | "steps" | "category">;
+type LessonViewerProps = Pick<Lesson, "slug" | "title" | "steps" | "category"> & {
+  initialStep?: number;
+};
 
-export function LessonViewer({ slug, title, steps, category }: LessonViewerProps) {
+export function LessonViewer({ slug, title, steps, category, initialStep }: LessonViewerProps) {
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const total = steps.length;
   const stepRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   const [currentStep, setCurrentStep] = useState(() => {
+    if (typeof initialStep === "number") {
+      return Math.min(Math.max(initialStep, 0), total - 1);
+    }
     const saved = progressStore.get(slug);
     if (saved.currentStep > 0 && saved.currentStep < total && !saved.completed) {
       return saved.currentStep;
     }
     return 0;
   });
-  const [highestStep, setHighestStep] = useState(currentStep);
+  const [highestStep, setHighestStep] = useState(() => {
+    const saved = progressStore.get(slug);
+    const previouslyReached = Math.min(Math.max(saved.currentStep, 0), total - 1);
+    return Math.max(previouslyReached, currentStep);
+  });
   const [stepBlocked, setStepBlocked] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const sidebarHydrated = useRef(false);
@@ -77,6 +89,17 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
   useEffect(() => {
     progressStore.saveStep(slug, currentStep);
   }, [slug, currentStep]);
+
+  useEffect(() => {
+    navigate({
+      to: ".",
+      search: (prev: Record<string, unknown>) => ({
+        ...prev,
+        step: currentStep === 0 ? undefined : currentStep,
+      }),
+      replace: true,
+    });
+  }, [currentStep, navigate]);
 
   useEffect(() => {
     if (!sidebarHydrated.current) return;
@@ -264,6 +287,7 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
                 <ErrorBoundary>
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeShikiConfig]}
                     components={markdownComponents}
                   >
                     {step}

@@ -96,7 +96,7 @@ export function HomePage({ lessons }: { lessons: LessonMeta[] }) {
 
         {/* Tagline */}
         <p className="mt-8 text-lg sm:text-xl text-secondary text-center max-w-md">
-          Learn by doing. Interactive lessons and quizzes for developers.
+          Anyone can prompt. Fewer can review.
         </p>
 
         {/* Features */}

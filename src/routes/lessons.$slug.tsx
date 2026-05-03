@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { getLesson } from "@/features/lessons/api";
 import { LessonViewer } from "@/features/lessons/LessonViewer";
 import { NotFound } from "@/shared/components/NotFound";
@@ -13,7 +14,12 @@ const fetchLesson = createServerFn()
     return lesson;
   });
 
+const lessonSearchSchema = z.object({
+  step: z.coerce.number().int().min(0).optional(),
+});
+
 export const Route = createFileRoute("/lessons/$slug")({
+  validateSearch: lessonSearchSchema,
   loader: ({ params }) => fetchLesson({ data: params.slug }),
   head: ({ loaderData }) => {
     if (!loaderData) return {};
@@ -51,8 +57,15 @@ export const Route = createFileRoute("/lessons/$slug")({
 
 function LessonPage() {
   const lesson = Route.useLoaderData();
+  const { step } = Route.useSearch();
 
   return (
-    <LessonViewer slug={lesson.slug} title={lesson.title} steps={lesson.steps} category={lesson.category} />
+    <LessonViewer
+      slug={lesson.slug}
+      title={lesson.title}
+      steps={lesson.steps}
+      category={lesson.category}
+      initialStep={step}
+    />
   );
 }

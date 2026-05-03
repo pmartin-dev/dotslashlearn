@@ -22,7 +22,7 @@ export const Route = createFileRoute("/categories/$slug")({
       loaderData.subcategories.reduce((n, s) => n + s.lessons.length, 0);
     return buildSeo({
       title: loaderData.name,
-      description: `${lessonCount} interactive lesson${lessonCount !== 1 ? "s" : ""} on ${loaderData.name}. Learn by doing with step-by-step guides and quizzes.`,
+      description: `${lessonCount} deep-dive lesson${lessonCount !== 1 ? "s" : ""} on ${loaderData.name}. Step-by-step explainers with quizzes.`,
       path: `/categories/${loaderData.slug}`,
     });
   },

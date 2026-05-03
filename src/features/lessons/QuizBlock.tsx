@@ -113,7 +113,7 @@ export function QuizBlock({ children }: { children: string }) {
 
         {!submitted && selected !== null && (
           <button type="button" className="quiz-submit" onClick={submit}>
-            Valider
+            Submit
           </button>
         )}
 
@@ -125,7 +125,7 @@ export function QuizBlock({ children }: { children: string }) {
             transition={{ duration: prefersReducedMotion ? 0 : 0.25 }}
           >
             <p className="quiz-feedback-title">
-              {isCorrect ? "Correct !" : "Pas tout à fait."}
+              {isCorrect ? "Correct!" : "Not quite."}
             </p>
             {quiz.explanation && (
               <p className="quiz-feedback-explanation">{quiz.explanation}</p>

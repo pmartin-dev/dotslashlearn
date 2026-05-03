@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { TerminalBlock } from "./TerminalBlock";
 import { QuizBlock } from "./QuizBlock";
 
@@ -25,30 +25,32 @@ function formatLang(className?: string): string | null {
   return LANG_LABELS[raw] ?? raw;
 }
 
-export function CodeBlock({
-  children,
-  className,
-}: {
-  children?: ReactNode;
-  className?: string;
-}) {
-  const lang = formatLang(className);
+function extractText(children: ReactNode): string {
+  if (typeof children === "string") return children;
+  if (Array.isArray(children)) {
+    return children.filter((c): c is string => typeof c === "string").join("");
+  }
+  return "";
+}
 
-  const text =
-    typeof children === "string"
-      ? children
-      : Array.isArray(children)
-        ? children.filter((c): c is string => typeof c === "string").join("")
-        : "";
+export function CodeBlock({
+  codeClassName,
+  codeChildren,
+  preProps,
+}: {
+  codeClassName?: string;
+  codeChildren?: ReactNode;
+  preProps: HTMLAttributes<HTMLPreElement>;
+}) {
+  const lang = formatLang(codeClassName);
 
   if (lang === "terminal") {
-    return <TerminalBlock>{text}</TerminalBlock>;
+    return <TerminalBlock>{extractText(codeChildren)}</TerminalBlock>;
   }
 
   if (lang === "quiz") {
-    return <QuizBlock>{text}</QuizBlock>;
+    return <QuizBlock>{extractText(codeChildren)}</QuizBlock>;
   }
-
 
   return (
     <div className="code-block">
@@ -57,8 +59,8 @@ export function CodeBlock({
           <span className="code-block-lang">{lang}</span>
         </div>
       )}
-      <pre>
-        <code className={className}>{children}</code>
+      <pre {...preProps}>
+        <code className={codeClassName}>{codeChildren}</code>
       </pre>
     </div>
   );

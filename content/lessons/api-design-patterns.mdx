@@ -7,7 +7,7 @@ category: "API Design"
 
 Designing an API is easy. Designing one that survives **five years of consumers, growth, and team turnover** is hard.
 
-Most APIs don't fail because of bad endpoints. They fail because of small early decisions -- a pagination shortcut, a non-idempotent `POST`, an error format that nobody can parse -- that compound into integration nightmares.
+Most APIs don't fail because of bad endpoints. They fail because of small early decisions (a pagination shortcut, a non-idempotent `POST`, an error format that nobody can parse) that compound into integration nightmares.
 
 This lesson covers the patterns senior engineers reach for, and the traps they avoid.
 
@@ -27,12 +27,12 @@ The foundation: URLs name **resources**, HTTP methods express **intent**.
 
 The standard mapping:
 
-- `GET    /products`     -- list
-- `GET    /products/42`  -- read one
-- `POST   /products`     -- create
-- `PUT    /products/42`  -- replace
-- `PATCH  /products/42`  -- partial update
-- `DELETE /products/42`  -- delete
+- `GET    /products`     list
+- `GET    /products/42`  read one
+- `POST   /products`     create
+- `PUT    /products/42`  replace
+- `PATCH  /products/42`  partial update
+- `DELETE /products/42`  delete
 
 Keep URLs **shallow**. `/products/42/reviews` is fine; `/users/7/orders/3/items/5/reviews` is a smell. Past two levels, expose a flat resource with a filter.
 
@@ -42,20 +42,20 @@ Keep URLs **shallow**. `/products/42/reviews` is fine; `/users/7/orders/3/items/
 
 Roy Fielding's 2000 dissertation defined REST as a set of **six constraints**, not a recipe. Worth knowing because every design decision either honors or breaks one of them.
 
-1. **Client-server** -- separation of concerns. Clients evolve independently from servers.
-2. **Stateless** -- every request carries everything needed to process it. No server-side session.
-3. **Cacheable** -- responses self-declare whether they can be reused.
-4. **Uniform interface** -- one shared protocol (HTTP methods, URIs, representations) across all resources.
-5. **Layered system** -- the client doesn't know if it's talking to the origin, a proxy, or a CDN.
-6. **Code on demand** -- servers can ship executable code to clients. *Optional*. Almost nobody does this.
+1. **Client-server**: separation of concerns. Clients evolve independently from servers.
+2. **Stateless**: every request carries everything needed to process it. No server-side session.
+3. **Cacheable**: responses self-declare whether they can be reused.
+4. **Uniform interface**: one shared protocol (HTTP methods, URIs, representations) across all resources.
+5. **Layered system**: the client doesn't know if it's talking to the origin, a proxy, or a CDN.
+6. **Code on demand**: servers can ship executable code to clients. *Optional*. Almost nobody does this.
 
 ---
 
 The senior take: **stateless** and **cacheable** are the two that pay rent. Stateless is what lets you scale horizontally without sticky sessions. Cacheable is what lets a CDN absorb 95% of your read traffic.
 
-The others are mostly hygiene -- if you violate them you'll feel it (custom protocols are unmaintainable, deeply coupled clients break on every change), but you won't think about them daily.
+The others are mostly hygiene. If you violate them you'll feel it (custom protocols are unmaintainable, deeply coupled clients break on every change), but you won't think about them daily.
 
-If your "REST" API requires a session affinity cookie to work, **it isn't REST**. It might still be a fine product -- but be honest about the trade-off you made.
+If your "REST" API requires a session affinity cookie to work, **it isn't REST**. It might still be a fine product, but be honest about the trade-off you made.
 
 ---
 
@@ -63,15 +63,15 @@ If your "REST" API requires a session affinity cookie to work, **it isn't REST**
 
 There is no perfect versioning strategy, only trade-offs you'll learn to hate. Pick deliberately.
 
-**1. URL path versioning** -- `GET /v1/users`
+**1. URL path versioning**: `GET /v1/users`
 
 Used by GitHub, Twilio, Stripe. Visible in logs, easy to debug, cache-friendly. Slightly ugly, but most teams converge here.
 
-**2. Header versioning** -- `Api-Version: 2024-01-15`
+**2. Header versioning**: `Api-Version: 2024-01-15`
 
 Cleaner URLs. Harder to test from a browser. Easy to forget the header.
 
-**3. Content negotiation** -- `Accept: application/vnd.example.v1+json`
+**3. Content negotiation**: `Accept: application/vnd.example.v1+json`
 
 REST-purist. Maximally annoying for consumers.
 
@@ -95,7 +95,7 @@ GET /products?offset=20&limit=10
 
 Easy to understand. Easy to jump to page 47. **Broken under concurrent writes**: if a record is inserted between page 1 and page 2, the consumer either sees an item twice or misses one entirely.
 
-Performance also degrades linearly with depth -- the database has to count and skip every prior row.
+Performance also degrades linearly with depth: the database has to count and skip every prior row.
 
 ---
 
@@ -105,7 +105,7 @@ Performance also degrades linearly with depth -- the database has to count and s
 GET /products?cursor=dXNlcjpXMDdRQ1JQQTQ&limit=10
 ```
 
-The cursor is an **opaque token** pointing at "where you left off" -- usually an encoded `(sort_key, id)` tuple. Stable under concurrent writes. Constant time at any depth.
+The cursor is an **opaque token** pointing at "where you left off", usually an encoded `(sort_key, id)` tuple. Stable under concurrent writes. Constant time at any depth.
 
 Trade-off: no jumping to arbitrary pages, only forward/back traversal.
 
@@ -130,7 +130,7 @@ You expose `GET /transactions?offset=N&limit=20`. Users complain that some trans
 - [ ] The client is double-rendering items
 - [x] New transactions inserted between page fetches shift the offset window
 - [ ] The cursor was reused from a previous session
-explanation: Offset pagination is unstable under writes. If a new transaction is inserted at position 0 between fetching page 1 and page 2, the row that was last on page 1 is now first on page 2 -- a duplicate. Cursor pagination avoids this by anchoring to a record, not a position.
+explanation: Offset pagination is unstable under writes. If a new transaction is inserted at position 0 between fetching page 1 and page 2, the row that was last on page 1 is now first on page 2, hence the duplicate. Cursor pagination avoids this by anchoring to a record, not a position.
 ```
 
 ---
@@ -187,15 +187,15 @@ Every team eventually invents a JSON error shape. They are all subtly different,
 
 The five standard fields:
 
-- `type` -- a URI identifying the error class (link to your docs)
-- `title` -- human-readable summary, stable across instances
-- `status` -- HTTP status code (mirrored for clients that lose it)
-- `detail` -- specific to this occurrence
-- `instance` -- URI of the specific failure
+- `type`: a URI identifying the error class (link to your docs)
+- `title`: human-readable summary, stable across instances
+- `status`: HTTP status code (mirrored for clients that lose it)
+- `detail`: specific to this occurrence
+- `instance`: URI of the specific failure
 
 You can extend with custom fields (`errors`, `trace`, etc.). The `Content-Type` should be `application/problem+json`.
 
-The benefit isn't aesthetic -- it's that **every consumer already has a parser**. SDKs, gateways, monitoring tools. Inventing your own format means writing all of those yourself.
+The benefit isn't aesthetic. It's that **every consumer already has a parser**: SDKs, gateways, monitoring tools. Inventing your own format means writing all of those yourself.
 
 ---
 
@@ -203,9 +203,9 @@ The benefit isn't aesthetic -- it's that **every consumer already has a parser**
 
 Three algorithms, ranked by sophistication:
 
-- **Fixed window** -- 100 req/min, reset on the minute. Simple. Allows a 200-req burst at the boundary.
-- **Sliding window** -- rolling 60s count. Smoother. More memory.
-- **Token bucket** -- tokens refill at a fixed rate; each request consumes one. Allows controlled bursts. The choice of AWS, Cloudflare, and most serious gateways.
+- **Fixed window**: 100 req/min, reset on the minute. Simple. Allows a 200-req burst at the boundary.
+- **Sliding window**: rolling 60s count. Smoother. More memory.
+- **Token bucket**: tokens refill at a fixed rate; each request consumes one. Allows controlled bursts. The choice of AWS, Cloudflare, and most serious gateways.
 
 ---
 
@@ -257,7 +257,7 @@ HTTP/1.1 304 Not Modified
 
 Zero body bytes. The client uses its cached copy.
 
-Layer this with a CDN at the edge and Redis on the server, and you get three cache tiers -- client, edge, server -- with one set of headers driving all of them.
+Layer this with a CDN at the edge and Redis on the server, and you get three cache tiers (client, edge, server) with one set of headers driving all of them.
 
 ---
 
@@ -265,19 +265,19 @@ Layer this with a CDN at the edge and Redis on the server, and you get three cac
 
 A short tour, in increasing strength:
 
-- **API keys** -- one shared secret per client. Fine for server-to-server, weak for anything user-facing. Treat like passwords (rotate, scope, never log).
-- **OAuth 2.0** -- delegated access. The right answer when a user is granting your app access to their data on a third-party service.
-- **JWT** -- self-contained, signed token carrying claims. Stateless verification, but **revocation is hard** -- plan for short TTLs and a refresh flow.
-- **Mutual TLS** -- both sides present certificates. Highest assurance, used between trusted services in regulated environments.
+- **API keys**: one shared secret per client. Fine for server-to-server, weak for anything user-facing. Treat like passwords (rotate, scope, never log).
+- **OAuth 2.0**: delegated access. The right answer when a user is granting your app access to their data on a third-party service.
+- **JWT**: self-contained, signed token carrying claims. Stateless verification, but **revocation is hard**, so plan for short TTLs and a refresh flow.
+- **Mutual TLS**: both sides present certificates. Highest assurance, used between trusted services in regulated environments.
 
 ---
 
 Authorization is a separate question: **who can do what** once authenticated.
 
-- **RBAC** -- roles map to permissions (`admin`, `editor`, `viewer`). Simple, scales to hundreds of users.
-- **ABAC** -- decisions based on attributes (user, resource, context). More flexible, more code, more bugs.
+- **RBAC**: roles map to permissions (`admin`, `editor`, `viewer`). Simple, scales to hundreds of users.
+- **ABAC**: decisions based on attributes (user, resource, context). More flexible, more code, more bugs.
 
-Default to RBAC. Move to ABAC only when you actually have rules RBAC can't express -- not before.
+Default to RBAC. Move to ABAC only when you actually have rules RBAC can't express, not before.
 
 ---
 
@@ -323,17 +323,17 @@ paths:
 
 What this buys you, in roughly the order you'll feel the wins:
 
-- **Parallel work** -- frontend and backend agree on the contract on day one. Frontend mocks against the spec while backend implements.
-- **Generated SDKs** -- run a codegen tool (`openapi-generator`, `orval`, `kiota`) and ship typed clients in 10 languages from one source.
-- **Generated types** -- on the server, validate request/response payloads against the schema. On the client, get autocompletion that can't drift from reality.
-- **Living documentation** -- Swagger UI, Redoc, Stoplight render the spec interactively. No more wiki that's six months stale.
-- **Contract testing** -- tools like Schemathesis or Dredd hammer your implementation against the spec and find divergences automatically.
+- **Parallel work**: frontend and backend agree on the contract on day one. Frontend mocks against the spec while backend implements.
+- **Generated SDKs**: run a codegen tool (`openapi-generator`, `orval`, `kiota`) and ship typed clients in 10 languages from one source.
+- **Generated types**: on the server, validate request/response payloads against the schema. On the client, get autocompletion that can't drift from reality.
+- **Living documentation**: Swagger UI, Redoc, Stoplight render the spec interactively. No more wiki that's six months stale.
+- **Contract testing**: tools like Schemathesis or Dredd hammer your implementation against the spec and find divergences automatically.
 
 ---
 
 The discipline that makes this work: **the spec is reviewed and merged separately from the implementation**, often in a `api/` directory or a dedicated repo. PRs that change endpoint shape are reviewed for breaking-change implications before any code is written.
 
-If you've ever shipped an endpoint, then spent two days writing a Notion doc about it, then watched it drift from the truth -- API-First is what kills that loop.
+If you've ever shipped an endpoint, then spent two days writing a Notion doc about it, then watched it drift from the truth: API-First is what kills that loop.
 
 The ecosystem standard is **OpenAPI 3.1** (which aligns with JSON Schema). Use it.
 
@@ -371,11 +371,11 @@ Know the pattern exists. Use it when the cost of breaking client-server coupling
 
 The patterns that matter most to internalize, in order of "how often they bite people":
 
-1. **Cursor pagination** by default -- offsets break under writes
+1. **Cursor pagination** by default, since offsets break under writes
 2. **Idempotency keys** on any retryable `POST`
-3. **RFC 9457 errors** -- don't invent your own format
-4. **API-First with OpenAPI** -- spec before code, generated clients, contract tests
-5. **Stateless requests** -- no session affinity, scale horizontally
+3. **RFC 9457 errors**: don't invent your own format
+4. **API-First with OpenAPI**: spec before code, generated clients, contract tests
+5. **Stateless requests**: no session affinity, scale horizontally
 6. **URL path versioning** with a real deprecation policy
 7. **Standard rate-limit headers** with `Retry-After`
 8. **HTTP caching** with `Cache-Control` + `ETag`
@@ -384,7 +384,7 @@ The patterns that matter most to internalize, in order of "how often they bite p
 
 The meta-lesson: **APIs are interfaces, and interfaces are forever.**
 
-The cost of changing a path, a status code, an error shape after consumers exist is enormous. Spend the time up front. Steal patterns from APIs that have been in production for a decade -- Stripe, GitHub, AWS -- because the shape of those APIs is the shape of decisions you'd make yourself, after enough years and enough outages.
+The cost of changing a path, a status code, an error shape after consumers exist is enormous. Spend the time up front. Steal patterns from APIs that have been in production for a decade (Stripe, GitHub, AWS), because the shape of those APIs is the shape of decisions you'd make yourself, after enough years and enough outages.
 
 ---
 
