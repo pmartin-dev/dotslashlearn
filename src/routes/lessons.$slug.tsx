@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getLesson } from "@/features/lessons/api";
 import { LessonViewer } from "@/features/lessons/LessonViewer";
 import { NotFound } from "@/shared/components/NotFound";
+import { buildSeo, buildCourseJsonLd } from "@/shared/seo/meta";
 
 const fetchLesson = createServerFn()
   .inputValidator((slug: string) => slug)
@@ -16,10 +17,24 @@ export const Route = createFileRoute("/lessons/$slug")({
   loader: ({ params }) => fetchLesson({ data: params.slug }),
   head: ({ loaderData }) => {
     if (!loaderData) return {};
+    const seo = buildSeo({
+      title: loaderData.title,
+      description: loaderData.description,
+      path: `/lessons/${loaderData.slug}`,
+      type: "article",
+    });
     return {
-      meta: [
-        { title: `${loaderData.title} - ./learn` },
-        { name: "description", content: loaderData.description },
+      ...seo,
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: buildCourseJsonLd({
+            title: loaderData.title,
+            description: loaderData.description,
+            slug: loaderData.slug,
+            category: loaderData.category,
+          }),
+        },
       ],
     };
   },

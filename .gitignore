@@ -39,3 +39,4 @@ yarn-error.log*
 # generated
 src/routeTree.gen.ts
 app.config.timestamp_*.js
+public/sitemap.xml

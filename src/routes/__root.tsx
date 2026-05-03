@@ -23,12 +23,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "./learn - Interactive dev lessons" },
-      {
-        name: "description",
-        content:
-          "Bite-sized, interactive lessons on developer topics. Navigate with your keyboard.",
-      },
+      { name: "theme-color", content: "#0c0c0e" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

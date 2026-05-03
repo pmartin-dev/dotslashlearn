@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getAllLessons } from "@/features/lessons/api";
 import { HomePage } from "@/features/home";
+import { buildSeo } from "@/shared/seo/meta";
 
 const fetchAllLessons = createServerFn().handler(() => {
   return getAllLessons();
@@ -9,6 +10,7 @@ const fetchAllLessons = createServerFn().handler(() => {
 
 export const Route = createFileRoute("/")({
   loader: () => fetchAllLessons(),
+  head: () => buildSeo({ title: "./learn", path: "/" }),
   component: Home,
 });
 

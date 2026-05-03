@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getLessonsByCategory } from "@/features/lessons/api";
 import { CategoryView } from "@/features/lessons/CategoryView";
 import { NotFound } from "@/shared/components/NotFound";
+import { buildSeo } from "@/shared/seo/meta";
 
 const fetchCategory = createServerFn()
   .inputValidator((slug: string) => slug)
@@ -16,9 +17,14 @@ export const Route = createFileRoute("/categories/$slug")({
   loader: ({ params }) => fetchCategory({ data: params.slug }),
   head: ({ loaderData }) => {
     if (!loaderData) return {};
-    return {
-      meta: [{ title: `${loaderData.name} - ./learn` }],
-    };
+    const lessonCount =
+      loaderData.uncategorized.length +
+      loaderData.subcategories.reduce((n, s) => n + s.lessons.length, 0);
+    return buildSeo({
+      title: loaderData.name,
+      description: `${lessonCount} interactive lesson${lessonCount !== 1 ? "s" : ""} on ${loaderData.name}. Learn by doing with step-by-step guides and quizzes.`,
+      path: `/categories/${loaderData.slug}`,
+    });
   },
   pendingComponent: () => (
     <div className="flex h-full items-center justify-center">
