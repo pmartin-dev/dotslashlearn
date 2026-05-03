@@ -34,6 +34,8 @@ export function useZoneKeyboard(
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (activeZone !== zone) return;
+      // Skip when modifier keys are held so we don't intercept native shortcuts (Cmd+C, etc.)
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       const handler = handlersRef.current[e.key];
       if (handler) handler(e);
     },

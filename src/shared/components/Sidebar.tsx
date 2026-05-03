@@ -105,8 +105,10 @@ export function Sidebar({
       >
         {/* Header */}
         <div className="shrink-0 px-5 pt-6 pb-8">
-          <Link to="/" onClick={onClose} className="cursor-pointer text-lg font-display font-semibold text-brand hover:text-brand-hover transition-colors">
-            ./learn
+          <Link to="/" onClick={onClose} className="cursor-pointer text-lg font-display font-semibold hover:opacity-80 transition-opacity">
+            <span className="text-brand">.</span>
+            <span className="text-brand">/</span>
+            <span className="font-light text-primary">learn</span>
           </Link>
           <p className="text-[11px] text-muted mt-0.5">
             beta

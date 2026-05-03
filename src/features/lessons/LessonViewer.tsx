@@ -8,6 +8,11 @@ import { progressStore } from "@/features/progress/store";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { CodeBlock } from "./CodeBlock";
 import { useZoneKeyboard } from "@/shared/hooks/useKeyZone";
+import { extractChapters, getChapterIndex } from "./useChapters";
+import { ChapterMap } from "./ChapterMap";
+import { ChapterSidebar } from "./ChapterSidebar";
+
+const SIDEBAR_STORAGE_KEY = "dotslashlearn_chapters_open";
 
 const markdownComponents = {
   pre({ children }: { children?: React.ReactNode }) {
@@ -46,11 +51,41 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
   });
   const [highestStep, setHighestStep] = useState(currentStep);
   const [stepBlocked, setStepBlocked] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const sidebarHydrated = useRef(false);
   const isComplete = currentStep === total - 1;
+
+  // SSR-safe: default to true on the server, sync from localStorage after mount
+  // so the server-rendered HTML always matches the first client render.
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(SIDEBAR_STORAGE_KEY) === "false") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSidebarOpen(false);
+      }
+    } catch {
+      // storage unavailable — keep default
+    }
+    sidebarHydrated.current = true;
+  }, []);
+
+  const chapters = useMemo(() => extractChapters(steps), [steps]);
+  const hasChapters = chapters.length > 0;
+  const currentChapterIdx = hasChapters ? getChapterIndex(chapters, currentStep) : -1;
+  const currentChapter = hasChapters ? chapters[currentChapterIdx] : null;
 
   useEffect(() => {
     progressStore.saveStep(slug, currentStep);
   }, [slug, currentStep]);
+
+  useEffect(() => {
+    if (!sidebarHydrated.current) return;
+    try {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarOpen));
+    } catch {
+      // storage failure — silently ignore
+    }
+  }, [sidebarOpen]);
 
   useEffect(() => {
     const el = stepRefs.current.get(currentStep);
@@ -105,14 +140,24 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
     }
   }, [currentStep]);
 
+  const goToStep = useCallback((step: number) => {
+    if (step <= highestStep) {
+      setCurrentStep(step);
+    }
+  }, [highestStep]);
+
+  const toggleSidebar = useCallback(() => setSidebarOpen((o) => !o), []);
+
   const handlers = useMemo(
     () => ({
       Enter: (e: KeyboardEvent) => { e.preventDefault(); goNext(); },
       ArrowRight: (e: KeyboardEvent) => { e.preventDefault(); goNext(); },
       ArrowLeft: (e: KeyboardEvent) => { e.preventDefault(); goPrev(); },
       Escape: (e: KeyboardEvent) => { e.preventDefault(); navigate({ to: "/learn" }); },
+      c: (e: KeyboardEvent) => { if (hasChapters) { e.preventDefault(); toggleSidebar(); } },
+      C: (e: KeyboardEvent) => { if (hasChapters) { e.preventDefault(); toggleSidebar(); } },
     }),
-    [goNext, goPrev, navigate],
+    [goNext, goPrev, navigate, hasChapters, toggleSidebar],
   );
 
   useZoneKeyboard("content", handlers);
@@ -136,62 +181,101 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
             <span className="shrink-0 text-subtle">/</span>
             <span className="text-primary font-medium truncate">{title}</span>
           </div>
-          <span className="shrink-0 text-xs text-muted ml-2 font-mono">
-            {currentStep + 1}/{total}
-          </span>
+
+          {hasChapters ? (
+            <button
+              onClick={toggleSidebar}
+              aria-expanded={sidebarOpen}
+              aria-controls="lesson-chapters"
+              className="shrink-0 ml-2 text-xs text-muted hover:text-primary transition-colors font-mono flex items-center gap-1.5 group"
+              title={sidebarOpen ? "Hide chapters (c)" : "Show chapters (c)"}
+            >
+              <span className="truncate max-w-[120px] sm:max-w-[180px]">{currentChapter?.title}</span>
+              <span className="text-subtle group-hover:text-muted transition-colors">
+                {currentChapterIdx + 1}/{chapters.length}
+              </span>
+            </button>
+          ) : (
+            <span className="shrink-0 text-xs text-muted ml-2 font-mono">
+              {currentStep + 1}/{total}
+            </span>
+          )}
         </div>
 
-        {/* Progress bar */}
-        <div className="mt-2 h-0.5 w-full rounded-full bg-subtle">
-          <motion.div
-            className="h-full rounded-full bg-brand"
-            initial={false}
-            animate={{ width: `${((currentStep + 1) / total) * 100}%` }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: "easeOut" }}
-          />
-        </div>
+        {hasChapters ? (
+          <div className="mx-auto max-w-3xl">
+            <ChapterMap
+              chapters={chapters}
+              currentStep={currentStep}
+              highestStep={highestStep}
+              onNavigate={goToStep}
+            />
+          </div>
+        ) : (
+          <div className="mt-2 h-0.5 w-full rounded-full bg-subtle">
+            <motion.div
+              className="h-full rounded-full bg-brand"
+              initial={false}
+              animate={{ width: `${((currentStep + 1) / total) * 100}%` }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: "easeOut" }}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Steps content — all visited steps stacked */}
-      <div
-        className="flex-1 overflow-y-auto sm:cursor-default cursor-pointer"
-        onClick={(e) => {
-          if (window.innerWidth < 640 && !isComplete && !(e.target as HTMLElement).closest("a")) {
-            goNext();
-          }
-        }}
-      >
-        <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
-          <div className="h-[40vh]" />
-          {steps.slice(0, highestStep + 1).map((step, i) => (
-            <motion.div
-              key={i}
-              ref={(el) => {
-                if (el) stepRefs.current.set(i, el);
-                else stepRefs.current.delete(i);
-              }}
-              initial={prefersReducedMotion || i <= highestStep - 1 ? false : { opacity: 0, y: 30 }}
-              animate={{
-                opacity: i <= currentStep ? 1 : 0.15,
-                y: 0,
-              }}
-              transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className="py-16 prose-terminal"
-            >
-              <ErrorBoundary>
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={markdownComponents}
-                >
-                  {step}
-                </ReactMarkdown>
-              </ErrorBoundary>
-              {i < currentStep && (
-                <div className="mt-16 border-b border-subtle/40" />
-              )}
-            </motion.div>
-          ))}
-          <div className="h-[40vh]" />
+      {/* Body: sidebar + content */}
+      <div className="flex flex-1 min-h-0">
+        {hasChapters && (
+          <ChapterSidebar
+            chapters={chapters}
+            currentStep={currentStep}
+            highestStep={highestStep}
+            open={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            onNavigate={goToStep}
+          />
+        )}
+
+        <div
+          className="flex-1 overflow-y-auto sm:cursor-default cursor-pointer"
+          onClick={(e) => {
+            if (window.innerWidth < 640 && !isComplete && !(e.target as HTMLElement).closest("a")) {
+              goNext();
+            }
+          }}
+        >
+          <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
+            <div className="h-[40vh]" />
+            {steps.slice(0, highestStep + 1).map((step, i) => (
+              <motion.div
+                key={i}
+                ref={(el) => {
+                  if (el) stepRefs.current.set(i, el);
+                  else stepRefs.current.delete(i);
+                }}
+                initial={prefersReducedMotion || i <= highestStep - 1 ? false : { opacity: 0, y: 30 }}
+                animate={{
+                  opacity: i <= currentStep ? 1 : 0.15,
+                  y: 0,
+                }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="py-16 prose-terminal"
+              >
+                <ErrorBoundary>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={markdownComponents}
+                  >
+                    {step}
+                  </ReactMarkdown>
+                </ErrorBoundary>
+                {i < currentStep && (
+                  <div className="mt-16 border-b border-subtle/40" />
+                )}
+              </motion.div>
+            ))}
+            <div className="h-[40vh]" />
+          </div>
         </div>
       </div>
 
@@ -221,6 +305,11 @@ export function LessonViewer({ slug, title, steps, category }: LessonViewerProps
                 <span>
                   <kbd className="rounded-md border border-subtle bg-surface px-1.5 py-0.5 text-[11px] font-mono">←</kbd> prev
                 </span>
+                {hasChapters && (
+                  <span>
+                    <kbd className="rounded-md border border-subtle bg-surface px-1.5 py-0.5 text-[11px] font-mono">c</kbd> chapters
+                  </span>
+                )}
                 <span>
                   <kbd className="rounded-md border border-subtle bg-surface px-1.5 py-0.5 text-[11px] font-mono">esc</kbd> quit
                 </span>
